@@ -1,12 +1,12 @@
 {
-  "name": "typescript-library-template",
+  "name": "airtable-ts",
   "version": "0.0.0",
-  "description": "Template for creating TypeScript libraries",
+  "description": "A type-safe Airtable SDK",
   "license": "MIT",
   "author": "Adam Jones (domdomegg)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/domdomegg/typescript-library-template.git"
+    "url": "https://github.com/domdomegg/airtable-ts.git"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,5 +33,9 @@
     "extends": [
       "eslint-config-domdomegg"
     ]
+  },
+  "dependencies": {
+    "airtable": "^0.12.2",
+    "axios": "^1.6.8"
   }
 }
