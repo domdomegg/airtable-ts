@@ -7,7 +7,7 @@ export type AirtableRecord = Omit<AirtableSdkRecord<FieldSet>, '_table'> & {
 };
 
 export type AirtableTable = AirtableSdkTable<FieldSet> & {
-  fields: { name: string, type: string }[],
+  fields: { id: string, name: string, type: string }[],
 };
 
 interface AirtableTsSpecificOptions {

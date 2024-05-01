@@ -22,41 +22,41 @@ import {
  * @example { id: 'rec012', a: 'Some text', b: 123, c: false, d: 'rec345' }
  */
 const mapRecordTypeAirtableToTs = <
-  T extends { [fieldName: string]: TsTypeString },
+  T extends { [fieldNameOrId: string]: TsTypeString },
 >(
     tsTypes: T,
     record: AirtableRecord,
   ): ({ [F in keyof T]: FromTsTypeString<T[F]> } & { id: string }) => {
   const item = {} as { [F in keyof T]: FromTsTypeString<T[F]> };
 
-  (Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldName, tsType]) => {
-    const value = record.fields[fieldName];
+  (Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldNameOrId, tsType]) => {
     // eslint-disable-next-line no-underscore-dangle
-    const airtableType = record._table.fields.find((f) => f.name === fieldName)?.type;
-
-    if (!airtableType) {
-      throw new Error(`[airtable-ts] Failed to get airtable type for field ${fieldName}`);
+    const fieldDefinition = record._table.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
+    if (!fieldDefinition) {
+      throw new Error(`[airtable-ts] Failed to get Airtable field ${fieldNameOrId}`);
     }
+
+    const value = record.fields[fieldDefinition.name];
 
     const tsMapper = fieldMappers[tsType];
     if (!tsMapper) {
       throw new Error(`[airtable-ts] No mappers for ts type ${tsType}`);
     }
-    const specificMapper = tsMapper[airtableType as keyof typeof tsMapper]?.fromAirtable;
+    const specificMapper = tsMapper[fieldDefinition.type as keyof typeof tsMapper]?.fromAirtable;
     if (!specificMapper) {
       // eslint-disable-next-line no-underscore-dangle
-      throw new Error(`[airtable-ts] Expected field ${record._table.name}.${fieldName} to be able to map to ts type ${tsType}, but got airtable type ${airtableType} which can't.`);
+      throw new Error(`[airtable-ts] Expected field ${record._table.name}.${fieldNameOrId} to be able to map to ts type ${tsType}, but got airtable type ${fieldDefinition.type} which can't.`);
     }
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      item[fieldName] = specificMapper(value as any) as FromTsTypeString<T[keyof T]>;
+      item[fieldNameOrId] = specificMapper(value as any) as FromTsTypeString<T[keyof T]>;
     } catch (error) {
       if (error instanceof Error) {
         // eslint-disable-next-line no-underscore-dangle
-        error.message = `Failed to map field ${record._table.name}.${fieldName}: ${error.message}`;
+        error.message = `Failed to map field ${record._table.name}.${fieldNameOrId}: ${error.message}`;
         // eslint-disable-next-line no-underscore-dangle
-        error.stack = `Error: Failed to map field ${record._table.name}.${fieldName}: ${error.stack?.startsWith('Error: ') ? error.stack.slice('Error: '.length) : error.stack}`;
+        error.stack = `Error: Failed to map field ${record._table.name}.${fieldNameOrId}: ${error.stack?.startsWith('Error: ') ? error.stack.slice('Error: '.length) : error.stack}`;
       }
       throw error;
     }
@@ -84,7 +84,7 @@ const mapRecordTypeAirtableToTs = <
  * @example { a: 'Some text', b: 123, d: ['rec123'] } // (c is an un-ticked checkbox, d is a multipleRecordLinks)
  */
 const mapRecordTypeTsToAirtable = <
-  T extends { [fieldName: string]: TsTypeString },
+  T extends { [fieldNameOrId: string]: TsTypeString },
   R extends { [K in keyof T]?: FromTsTypeString<T[K]> } & { id?: string },
 >(
     tsTypes: T,
@@ -93,36 +93,36 @@ const mapRecordTypeTsToAirtable = <
   ): FieldSet => {
   const item = {} as FieldSet;
 
-  (Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldName, tsType]) => {
-    const value = tsRecord[fieldName];
+  (Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldNameOrId, tsType]) => {
+    const value = tsRecord[fieldNameOrId];
 
-    if (!(fieldName in tsRecord)) {
+    if (!(fieldNameOrId in tsRecord)) {
       // If we don't have the field, just skip: this allows us to support partial updates
       return;
     }
 
     if (!matchesType(value, tsType)) {
       // This should be unreachable because of our types
-      throw new Error(`[airtable-ts] Expected field ${airtableTable.name}.${fieldName} to match type \`${tsType}\` but got value \`${JSON.stringify(value)}\`. This should never happen in normal operation as it should be caught before this point.`);
+      throw new Error(`[airtable-ts] Expected field ${airtableTable.name}.${fieldNameOrId} to match type \`${tsType}\` but got value \`${JSON.stringify(value)}\`. This should never happen in normal operation as it should be caught before this point.`);
     }
 
-    const airtableType = airtableTable.fields.find((f) => f.name === fieldName)?.type;
-
-    if (!airtableType) {
-      throw new Error(`[airtable-ts] Failed to get airtable type for field ${fieldName}`);
+    // eslint-disable-next-line no-underscore-dangle
+    const fieldDefinition = airtableTable.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
+    if (!fieldDefinition) {
+      throw new Error(`[airtable-ts] Failed to get Airtable field ${fieldNameOrId}`);
     }
 
     const tsMapper = fieldMappers[tsType];
     if (!tsMapper) {
       throw new Error(`[airtable-ts] No mappers for ts type ${tsType}`);
     }
-    const specificMapper = tsMapper[airtableType as keyof typeof tsMapper]?.toAirtable;
+    const specificMapper = tsMapper[fieldDefinition.type as keyof typeof tsMapper]?.toAirtable;
     if (!specificMapper) {
-      throw new Error(`[airtable-ts] Expected field ${airtableTable.name}.${fieldName} to be able to map to airtable type \`${airtableType}\`, but got ts type \`${tsType}\` which can't.`);
+      throw new Error(`[airtable-ts] Expected field ${airtableTable.name}.${fieldNameOrId} to be able to map to airtable type \`${fieldDefinition.type}\`, but got ts type \`${tsType}\` which can't.`);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    item[fieldName] = (specificMapper as any)(value);
+    item[fieldNameOrId] = (specificMapper as any)(value);
   });
 
   return Object.assign(item, { id: tsRecord.id });

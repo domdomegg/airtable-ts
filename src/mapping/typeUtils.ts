@@ -206,8 +206,8 @@ export const airtableFieldNameTsTypes = <T extends Item>(table: Table<T>): Recor
 
 // Value for possible field mapping
 // For arrays, this may be:
-// - an array of field names (each holding a single value of the array type); or
-// - one field name (holding an array of values of the correct type)
+// - an array of field names or field ids (each holding a single value of the array type); or
+// - one field name or field id (holding an array of values of the correct type)
 // Otherwise this must be a single field name
 export type MappingValue<T> = T extends unknown[] ? string | string[] : string;
 

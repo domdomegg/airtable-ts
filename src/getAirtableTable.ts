@@ -25,7 +25,7 @@ export const getAirtableTable = async <T extends Item>(airtable: Airtable, table
   );
 };
 
-type BaseSchema = { id: string, fields: { name: string, type: string }[] }[];
+type BaseSchema = { id: string, fields: AirtableTable['fields'] }[];
 
 const baseSchemaCache = new Map</* baseId */ string, { at: number, data: BaseSchema }>();
 

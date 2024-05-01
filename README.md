@@ -32,6 +32,9 @@ export const studentTable: Table<{ id: string, name: string, classes: string[] }
   baseId: 'app1234',
   tableId: 'tbl1234',
   schema: { name: 'string', classes: 'string[]' },
+  // optional: use mappings with field ids to prevent renamings breaking your app,
+  //           or with field names to make handling renamings easy
+  mappings: { name: 'fld1234', classes: 'Classes student is enrolled in' },
 };
 
 export const classTable: Table<{ id: string, name: string }> = {
