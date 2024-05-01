@@ -36,6 +36,21 @@ export const fieldMappers: Mapper = {
     multilineText: fallbackMapperPair('', ''),
     richText: fallbackMapperPair('', ''),
     phoneNumber: fallbackMapperPair('', ''),
+    singleSelect: fallbackMapperPair('', ''),
+    multipleSelects: {
+      toAirtable: (value) => {
+        return [value];
+      },
+      fromAirtable: (value) => {
+        if (!value) {
+          throw new Error('[airtable-ts] Failed to coerce multipleSelects type field to a single string, as it was blank');
+        }
+        if (value.length !== 1) {
+          throw new Error(`[airtable-ts] Can't coerce multipleSelects to a single string, as there were ${value?.length} entries`);
+        }
+        return value[0]!;
+      },
+    },
     multipleRecordLinks: {
       toAirtable: (value) => {
         return [value];
@@ -89,6 +104,21 @@ export const fieldMappers: Mapper = {
     multilineText: fallbackMapperPair(null, null),
     richText: fallbackMapperPair(null, null),
     phoneNumber: fallbackMapperPair(null, null),
+    singleSelect: fallbackMapperPair(null, null),
+    multipleSelects: {
+      toAirtable: (value) => {
+        return value ? [value] : [];
+      },
+      fromAirtable: (value) => {
+        if (!value || value.length === 0) {
+          return null;
+        }
+        if (value.length !== 1) {
+          throw new Error(`[airtable-ts] Can't coerce multipleSelects to a single string, as there were ${value?.length} entries`);
+        }
+        return value[0]!;
+      },
+    },
     multipleRecordLinks: {
       toAirtable: (value) => {
         return value ? [value] : [];
@@ -270,6 +300,7 @@ export const fieldMappers: Mapper = {
     },
   },
   'string[]': {
+    multipleSelects: fallbackMapperPair([], []),
     multipleRecordLinks: fallbackMapperPair([], []),
     multipleLookupValues: {
       toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
@@ -285,6 +316,7 @@ export const fieldMappers: Mapper = {
     },
   },
   'string[] | null': {
+    multipleSelects: fallbackMapperPair(null, null),
     multipleRecordLinks: fallbackMapperPair(null, null),
     multipleLookupValues: {
       toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },

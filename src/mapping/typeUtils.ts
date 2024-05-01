@@ -34,6 +34,7 @@ export type AirtableTypeString =
   | 'url'
   | 'multilineText'
   | 'phoneNumber'
+  | 'singleSelect'
   | 'checkbox'
   | 'number'
   | 'percent'
@@ -44,6 +45,7 @@ export type AirtableTypeString =
   | 'richText'
   | 'duration'
   | 'multipleRecordLinks'
+  | 'multipleSelects'
   | 'dateTime'
   | 'multipleLookupValues';
 
@@ -59,19 +61,21 @@ export type FromAirtableTypeString<T> =
           T extends 'multilineText' ? string :
             T extends 'richText' ? string :
               T extends 'phoneNumber' ? string :
-                T extends 'checkbox' ? boolean :
-                  T extends 'number' ? number :
-                    T extends 'percent' ? number :
-                      T extends 'currency' ? number :
-                        T extends 'rating' ? number :
-                          T extends 'duration' ? number :
-                            T extends 'count' ? number :
-                              T extends 'autoNumber' ? number :
-                                T extends 'multipleRecordLinks' ? string[] :
-                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                  T extends 'multipleLookupValues' ? FromAirtableTypeString<any>[] :
-                                    T extends 'dateTime' ? string :
-                                      never);
+                T extends 'singleSelect' ? string :
+                  T extends 'checkbox' ? boolean :
+                    T extends 'number' ? number :
+                      T extends 'percent' ? number :
+                        T extends 'currency' ? number :
+                          T extends 'rating' ? number :
+                            T extends 'duration' ? number :
+                              T extends 'count' ? number :
+                                T extends 'autoNumber' ? number :
+                                  T extends 'multipleRecordLinks' ? string[] :
+                                    T extends 'multipleSelects' ? string[] :
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                      T extends 'multipleLookupValues' ? FromAirtableTypeString<any>[] :
+                                        T extends 'dateTime' ? string :
+                                          never);
 
 interface TypeDef {
   single: 'string' | 'number' | 'boolean',

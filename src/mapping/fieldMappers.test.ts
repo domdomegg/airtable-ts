@@ -9,6 +9,7 @@ describe('string', () => {
     ['multilineText'],
     ['richText'],
     ['phoneNumber'],
+    ['singleSelect'],
   ] as const)('%s', (airtableType) => {
     const mapperPair = fieldMappers.string?.[airtableType];
     if (!mapperPair) {
@@ -67,6 +68,7 @@ describe('string | null', () => {
     ['multilineText'],
     ['richText'],
     ['phoneNumber'],
+    ['singleSelect'],
   ] as const)('%s', (airtableType) => {
     const mapperPair = fieldMappers['string | null']?.[airtableType];
     if (!mapperPair) {
