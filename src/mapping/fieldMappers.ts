@@ -116,6 +116,22 @@ export const fieldMappers: Mapper = {
         return value[0];
       },
     },
+    rollup: {
+      toAirtable: () => { throw new Error('[airtable-ts] rollup type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'string') return value;
+        if (value === undefined || value === null) return '';
+        throw new Error(`[airtable-ts] Can't coerce rollup to a string, as it was of type ${typeof value}`);
+      },
+    },
+    formula: {
+      toAirtable: () => { throw new Error('[airtable-ts] formula type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'string') return value;
+        if (value === undefined || value === null) return '';
+        throw new Error(`[airtable-ts] Can't coerce formula to a string, as it was of type ${typeof value}`);
+      },
+    },
   },
   'string | null': {
     url: fallbackMapperPair(null, null),
@@ -206,6 +222,22 @@ export const fieldMappers: Mapper = {
           throw new Error(`[airtable-ts] Can't coerce singular lookup to a single string, as it was of type ${typeof value[0]}`);
         }
         return value[0];
+      },
+    },
+    rollup: {
+      toAirtable: () => { throw new Error('[airtable-ts] rollup type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'string') return value;
+        if (value === undefined || value === null) return null;
+        throw new Error(`[airtable-ts] Can't coerce rollup to a string, as it was of type ${typeof value}`);
+      },
+    },
+    formula: {
+      toAirtable: () => { throw new Error('[airtable-ts] formula type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'string') return value;
+        if (value === undefined || value === null) return null;
+        throw new Error(`[airtable-ts] Can't coerce formula to a string, as it was of type ${typeof value}`);
       },
     },
   },
@@ -308,6 +340,20 @@ export const fieldMappers: Mapper = {
         return value[0];
       },
     },
+    rollup: {
+      toAirtable: () => { throw new Error('[airtable-ts] rollup type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'number') return value;
+        throw new Error(`[airtable-ts] Can't coerce rollup to a number, as it was of type ${typeof value}`);
+      },
+    },
+    formula: {
+      toAirtable: () => { throw new Error('[airtable-ts] formula type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'number') return value;
+        throw new Error(`[airtable-ts] Can't coerce formula to a number, as it was of type ${typeof value}`);
+      },
+    },
   },
   'number | null': {
     number: fallbackMapperPair(null, null),
@@ -376,6 +422,22 @@ export const fieldMappers: Mapper = {
         return value[0];
       },
     },
+    rollup: {
+      toAirtable: () => { throw new Error('[airtable-ts] rollup type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'number') return value;
+        if (value === null || value === undefined) return null;
+        throw new Error(`[airtable-ts] Can't coerce rollup to a number, as it was of type ${typeof value}`);
+      },
+    },
+    formula: {
+      toAirtable: () => { throw new Error('[airtable-ts] formula type field is readonly'); },
+      fromAirtable: (value) => {
+        if (typeof value === 'number') return value;
+        if (value === null || value === undefined) return null;
+        throw new Error(`[airtable-ts] Can't coerce formula to a number, as it was of type ${typeof value}`);
+      },
+    },
   },
   'string[]': {
     multipleSelects: fallbackMapperPair([], []),
@@ -388,6 +450,18 @@ export const fieldMappers: Mapper = {
         }
         if (value.some((v) => typeof v !== 'string')) {
           throw new Error('[airtable-ts] Can\'t coerce lookup to a string array, as it had non string type');
+        }
+        return value as string[];
+      },
+    },
+    formula: {
+      toAirtable: () => { throw new Error('[airtable-ts] formula type field is readonly'); },
+      fromAirtable: (value) => {
+        if (!Array.isArray(value)) {
+          throw new Error('[airtable-ts] Failed to coerce formula type field to a string array, as it was not an array');
+        }
+        if (value.some((v) => typeof v !== 'string')) {
+          throw new Error('[airtable-ts] Can\'t coerce formula to a string array, as it had non string type');
         }
         return value as string[];
       },
@@ -407,6 +481,21 @@ export const fieldMappers: Mapper = {
         }
         if (value.some((v) => typeof v !== 'string')) {
           throw new Error('[airtable-ts] Can\'t coerce lookup to a string array, as it had non string type');
+        }
+        return value as string[];
+      },
+    },
+    formula: {
+      toAirtable: () => { throw new Error('[airtable-ts] formula type field is readonly'); },
+      fromAirtable: (value) => {
+        if (!value && !Array.isArray(value)) {
+          return null;
+        }
+        if (!Array.isArray(value)) {
+          throw new Error('[airtable-ts] Failed to coerce formula type field to a string array, as it was not an array');
+        }
+        if (value.some((v) => typeof v !== 'string')) {
+          throw new Error('[airtable-ts] Can\'t coerce formula to a string array, as it had non string type');
         }
         return value as string[];
       },
