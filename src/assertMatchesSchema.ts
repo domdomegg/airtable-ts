@@ -2,10 +2,6 @@ import {
   matchesType, TsTypeString, Item, Table,
 } from './mapping/typeUtils';
 
-// In theory, this should never catch stuff because our type mapping logic should
-// verify the types are compatible. However, "In theory there is no difference
-// between theory and practice - in practice there is"
-
 /**
  * In theory, this should never catch stuff because our type mapping logic should
  * verify the types are compatible.

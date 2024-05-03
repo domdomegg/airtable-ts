@@ -29,53 +29,85 @@ export type FromTsTypeString<T> =
                           never;
 
 export type AirtableTypeString =
-  | 'singleLineText'
-  | 'email'
-  | 'url'
-  | 'multilineText'
-  | 'phoneNumber'
-  | 'singleSelect'
-  | 'checkbox'
-  | 'number'
-  | 'percent'
-  | 'currency'
-  | 'count'
+  | 'aiText'
   | 'autoNumber'
-  | 'rating'
-  | 'richText'
+  | 'barcode'
+  | 'button'
+  | 'checkbox'
+  | 'count'
+  | 'createdBy'
+  | 'createdTime'
+  | 'currency'
+  | 'date'
+  | 'dateTime'
   | 'duration'
+  | 'email'
+  | 'externalSyncSource'
+  | 'formula'
+  | 'lastModifiedBy'
+  | 'lastModifiedTime'
+  | 'lookup'
+  | 'multipleLookupValues'
+  | 'multilineText'
+  | 'multipleAttachments'
+  | 'multipleCollaborators'
   | 'multipleRecordLinks'
   | 'multipleSelects'
-  | 'dateTime'
-  | 'multipleLookupValues';
+  | 'number'
+  | 'percent'
+  | 'phoneNumber'
+  | 'rating'
+  | 'richText'
+  | 'rollup'
+  | 'singleCollaborator'
+  | 'singleLineText'
+  | 'singleSelect'
+  | 'url';
 
 // Should map an AirtableTypeString to its cell format, as per
 // https://airtable.com/developers/web/api/field-model
-export type FromAirtableTypeString<T> =
+export type FromAirtableTypeString<T extends AirtableTypeString> =
   // All Airtable types are actually nullable
   | null
   | (
-    T extends 'singleLineText' ? string :
-      T extends 'email' ? string :
-        T extends 'url' ? string :
-          T extends 'multilineText' ? string :
-            T extends 'richText' ? string :
-              T extends 'phoneNumber' ? string :
-                T extends 'singleSelect' ? string :
-                  T extends 'checkbox' ? boolean :
-                    T extends 'number' ? number :
-                      T extends 'percent' ? number :
-                        T extends 'currency' ? number :
-                          T extends 'rating' ? number :
-                            T extends 'duration' ? number :
-                              T extends 'count' ? number :
-                                T extends 'autoNumber' ? number :
-                                  T extends 'multipleRecordLinks' ? string[] :
-                                    T extends 'multipleSelects' ? string[] :
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                      T extends 'multipleLookupValues' ? FromAirtableTypeString<any>[] :
-                                        T extends 'dateTime' ? string :
-                                          never);
+    T extends
+    | 'url'
+    | 'email'
+    | 'phoneNumber'
+    | 'singleLineText'
+    | 'multilineText'
+    | 'richText'
+    | 'singleSelect'
+    | 'externalSyncSource'
+    | 'date'
+    | 'dateTime'
+    | 'createdTime'
+    | 'lastModifiedTime'
+      ? string :
+      T extends
+      | 'multipleRecordLinks'
+      | 'multipleSelects'
+        ? string[] :
+        T extends
+        | 'number'
+        | 'rating'
+        | 'duration'
+        | 'currency'
+        | 'percent'
+        | 'count'
+        | 'autoNumber'
+          ? number :
+          T extends
+          | 'checkbox'
+            ? boolean :
+            T extends
+            | 'lookup'
+            | 'multipleLookupValues'
+            | 'rollup'
+            | 'formula'
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ? FromAirtableTypeString<any>[] :
+              never);
 
 interface TypeDef {
   single: 'string' | 'number' | 'boolean',

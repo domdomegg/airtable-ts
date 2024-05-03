@@ -30,13 +30,17 @@ const requiredMapperPair = {
 
 export const fieldMappers: Mapper = {
   string: {
-    singleLineText: fallbackMapperPair('', ''),
-    email: fallbackMapperPair('', ''),
     url: fallbackMapperPair('', ''),
+    email: fallbackMapperPair('', ''),
+    phoneNumber: fallbackMapperPair('', ''),
+    singleLineText: fallbackMapperPair('', ''),
     multilineText: fallbackMapperPair('', ''),
     richText: fallbackMapperPair('', ''),
-    phoneNumber: fallbackMapperPair('', ''),
     singleSelect: fallbackMapperPair('', ''),
+    externalSyncSource: {
+      toAirtable: () => { throw new Error('[airtable-ts] externalSyncSource type field is readonly'); },
+      fromAirtable: (value) => value ?? '',
+    },
     multipleSelects: {
       toAirtable: (value) => {
         return [value];
@@ -65,6 +69,22 @@ export const fieldMappers: Mapper = {
         return value[0]!;
       },
     },
+    date: {
+      toAirtable: (value) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date string');
+        }
+        return date.toJSON().slice(0, 10);
+      },
+      fromAirtable: (value) => {
+        const date = new Date(value ?? '');
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date string');
+        }
+        return date.toJSON();
+      },
+    },
     dateTime: {
       toAirtable: (value) => {
         const date = new Date(value);
@@ -82,29 +102,33 @@ export const fieldMappers: Mapper = {
       },
     },
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!value) {
-          throw new Error('[airtable-ts] Failed to coerce multipleLookupValues type field to a single string, as it was blank');
+          throw new Error('[airtable-ts] Failed to coerce lookup type field to a single string, as it was blank');
         }
         if (value.length !== 1) {
-          throw new Error(`[airtable-ts] Can't coerce multipleLookupValues to a single string, as there were ${value?.length} entries`);
+          throw new Error(`[airtable-ts] Can't coerce lookup to a single string, as there were ${value?.length} entries`);
         }
         if (typeof value[0] !== 'string') {
-          throw new Error(`[airtable-ts] Can't coerce singular multipleLookupValues to a single string, as it was of type ${typeof value[0]}`);
+          throw new Error(`[airtable-ts] Can't coerce singular lookup to a single string, as it was of type ${typeof value[0]}`);
         }
         return value[0];
       },
     },
   },
   'string | null': {
-    singleLineText: fallbackMapperPair(null, null),
-    email: fallbackMapperPair(null, null),
     url: fallbackMapperPair(null, null),
+    email: fallbackMapperPair(null, null),
+    phoneNumber: fallbackMapperPair(null, null),
+    singleLineText: fallbackMapperPair(null, null),
     multilineText: fallbackMapperPair(null, null),
     richText: fallbackMapperPair(null, null),
-    phoneNumber: fallbackMapperPair(null, null),
     singleSelect: fallbackMapperPair(null, null),
+    externalSyncSource: {
+      toAirtable: () => { throw new Error('[airtable-ts] externalSyncSource type field is readonly'); },
+      fromAirtable: (value) => value ?? null,
+    },
     multipleSelects: {
       toAirtable: (value) => {
         return value ? [value] : [];
@@ -133,6 +157,24 @@ export const fieldMappers: Mapper = {
         return value[0]!;
       },
     },
+    date: {
+      toAirtable: (value) => {
+        if (value === null) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date');
+        }
+        return date.toJSON().slice(0, 10);
+      },
+      fromAirtable: (value) => {
+        if (value === null || value === undefined) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date');
+        }
+        return date.toJSON();
+      },
+    },
     dateTime: {
       toAirtable: (value) => {
         if (value === null) return null;
@@ -152,16 +194,16 @@ export const fieldMappers: Mapper = {
       },
     },
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!value || value.length === 0) {
           return null;
         }
         if (value.length !== 1) {
-          throw new Error(`[airtable-ts] Can't coerce multipleLookupValues to a single string, as there were ${value?.length} entries`);
+          throw new Error(`[airtable-ts] Can't coerce lookup to a single string, as there were ${value?.length} entries`);
         }
         if (typeof value[0] !== 'string') {
-          throw new Error(`[airtable-ts] Can't coerce singular multipleLookupValues to a single string, as it was of type ${typeof value[0]}`);
+          throw new Error(`[airtable-ts] Can't coerce singular lookup to a single string, as it was of type ${typeof value[0]}`);
         }
         return value[0];
       },
@@ -170,16 +212,16 @@ export const fieldMappers: Mapper = {
   boolean: {
     checkbox: fallbackMapperPair(false, false),
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!value) {
-          throw new Error('[airtable-ts] Failed to coerce multipleLookupValues type field to a single boolean, as it was blank');
+          throw new Error('[airtable-ts] Failed to coerce lookup type field to a single boolean, as it was blank');
         }
         if (value.length !== 1) {
-          throw new Error(`[airtable-ts] Can't coerce multipleLookupValues to a single boolean, as there were ${value?.length} entries`);
+          throw new Error(`[airtable-ts] Can't coerce lookup to a single boolean, as there were ${value?.length} entries`);
         }
         if (typeof value[0] !== 'boolean') {
-          throw new Error(`[airtable-ts] Can't coerce singular multipleLookupValues to a single boolean, as it was of type ${typeof value[0]}`);
+          throw new Error(`[airtable-ts] Can't coerce singular lookup to a single boolean, as it was of type ${typeof value[0]}`);
         }
         return value[0];
       },
@@ -188,16 +230,16 @@ export const fieldMappers: Mapper = {
   'boolean | null': {
     checkbox: fallbackMapperPair(null, null),
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!value || value.length === 0) {
           return null;
         }
         if (value.length !== 1) {
-          throw new Error(`[airtable-ts] Can't coerce multipleLookupValues to a single boolean, as there were ${value?.length} entries`);
+          throw new Error(`[airtable-ts] Can't coerce lookup to a single boolean, as there were ${value?.length} entries`);
         }
         if (typeof value[0] !== 'boolean') {
-          throw new Error(`[airtable-ts] Can't coerce singular multipleLookupValues to a single boolean, as it was of type ${typeof value[0]}`);
+          throw new Error(`[airtable-ts] Can't coerce singular lookup to a single boolean, as it was of type ${typeof value[0]}`);
         }
         return value[0];
       },
@@ -205,10 +247,10 @@ export const fieldMappers: Mapper = {
   },
   number: {
     number: requiredMapperPair,
-    percent: requiredMapperPair,
-    currency: requiredMapperPair,
     rating: requiredMapperPair,
     duration: requiredMapperPair,
+    currency: requiredMapperPair,
+    percent: requiredMapperPair,
     count: {
       toAirtable: () => { throw new Error('[airtable-ts] count type field is readonly'); },
       fromAirtable: (value) => required(value),
@@ -216,6 +258,23 @@ export const fieldMappers: Mapper = {
     autoNumber: {
       toAirtable: () => { throw new Error('[airtable-ts] autoNumber type field is readonly'); },
       fromAirtable: (value) => required(value),
+    },
+    // Number assumed to be unix time in seconds
+    date: {
+      toAirtable: (value) => {
+        const date = new Date(value * 1000);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date');
+        }
+        return date.toJSON().slice(0, 10);
+      },
+      fromAirtable: (value) => {
+        const date = new Date(value ?? '');
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date');
+        }
+        return Math.floor(date.getTime() / 1000);
+      },
     },
     // Number assumed to be unix time in seconds
     dateTime: {
@@ -235,16 +294,16 @@ export const fieldMappers: Mapper = {
       },
     },
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!value) {
-          throw new Error('[airtable-ts] Failed to coerce multipleLookupValues type field to a single number, as it was blank');
+          throw new Error('[airtable-ts] Failed to coerce lookup type field to a single number, as it was blank');
         }
         if (value.length !== 1) {
-          throw new Error(`[airtable-ts] Can't coerce multipleLookupValues to a single number, as there were ${value?.length} entries`);
+          throw new Error(`[airtable-ts] Can't coerce lookup to a single number, as there were ${value?.length} entries`);
         }
         if (typeof value[0] !== 'number') {
-          throw new Error(`[airtable-ts] Can't coerce singular multipleLookupValues to a single number, as it was of type ${typeof value[0]}`);
+          throw new Error(`[airtable-ts] Can't coerce singular lookup to a single number, as it was of type ${typeof value[0]}`);
         }
         return value[0];
       },
@@ -252,10 +311,10 @@ export const fieldMappers: Mapper = {
   },
   'number | null': {
     number: fallbackMapperPair(null, null),
-    percent: fallbackMapperPair(null, null),
-    currency: fallbackMapperPair(null, null),
     rating: fallbackMapperPair(null, null),
     duration: fallbackMapperPair(null, null),
+    currency: fallbackMapperPair(null, null),
+    percent: fallbackMapperPair(null, null),
     count: {
       fromAirtable: (value) => value ?? null,
       toAirtable: () => { throw new Error('[airtable-ts] count type field is readonly'); },
@@ -263,6 +322,25 @@ export const fieldMappers: Mapper = {
     autoNumber: {
       fromAirtable: (value) => value ?? null,
       toAirtable: () => { throw new Error('[airtable-ts] autoNumber field is readonly'); },
+    },
+    // Number assumed to be unix time in seconds
+    date: {
+      toAirtable: (value) => {
+        if (value === null) return null;
+        const date = new Date(value * 1000);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date');
+        }
+        return date.toJSON().slice(0, 10);
+      },
+      fromAirtable: (value) => {
+        if (value === null || value === undefined) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid date');
+        }
+        return Math.floor(date.getTime() / 1000);
+      },
     },
     // Number assumed to be unix time in seconds
     dateTime: {
@@ -284,16 +362,16 @@ export const fieldMappers: Mapper = {
       },
     },
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!value || value.length === 0) {
           return null;
         }
         if (value.length !== 1) {
-          throw new Error(`[airtable-ts] Can't coerce multipleLookupValues to a single number, as there were ${value?.length} entries`);
+          throw new Error(`[airtable-ts] Can't coerce lookup to a single number, as there were ${value?.length} entries`);
         }
         if (typeof value[0] !== 'number') {
-          throw new Error(`[airtable-ts] Can't coerce singular multipleLookupValues to a single number, as it was of type ${typeof value[0]}`);
+          throw new Error(`[airtable-ts] Can't coerce singular lookup to a single number, as it was of type ${typeof value[0]}`);
         }
         return value[0];
       },
@@ -303,13 +381,13 @@ export const fieldMappers: Mapper = {
     multipleSelects: fallbackMapperPair([], []),
     multipleRecordLinks: fallbackMapperPair([], []),
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!Array.isArray(value)) {
-          throw new Error('[airtable-ts] Failed to coerce multipleLookupValues type field to a string array, as it was not an array');
+          throw new Error('[airtable-ts] Failed to coerce lookup type field to a string array, as it was not an array');
         }
         if (value.some((v) => typeof v !== 'string')) {
-          throw new Error('[airtable-ts] Can\'t coerce multipleLookupValues to a string array, as it had non string type');
+          throw new Error('[airtable-ts] Can\'t coerce lookup to a string array, as it had non string type');
         }
         return value as string[];
       },
@@ -319,16 +397,16 @@ export const fieldMappers: Mapper = {
     multipleSelects: fallbackMapperPair(null, null),
     multipleRecordLinks: fallbackMapperPair(null, null),
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] multipleLookupValues type field is readonly'); },
+      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
         if (!value && !Array.isArray(value)) {
           return null;
         }
         if (!Array.isArray(value)) {
-          throw new Error('[airtable-ts] Failed to coerce multipleLookupValues type field to a string array, as it was not an array');
+          throw new Error('[airtable-ts] Failed to coerce lookup type field to a string array, as it was not an array');
         }
         if (value.some((v) => typeof v !== 'string')) {
-          throw new Error('[airtable-ts] Can\'t coerce multipleLookupValues to a string array, as it had non string type');
+          throw new Error('[airtable-ts] Can\'t coerce lookup to a string array, as it had non string type');
         }
         return value as string[];
       },
