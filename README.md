@@ -27,21 +27,22 @@ const db = new AirtableTs({
   apiKey: 'pat1234.abcdef',
 });
 
-export const studentTable: Table<{ id: string, name: string, classes: string[] }> = {
+// Tip: use airtable-ts-codegen to autogenerate these from your Airtable base
+export const studentTable: Table<{ id: string, firstName: string, classes: string[] }> = {
   name: 'student',
   baseId: 'app1234',
   tableId: 'tbl1234',
-  schema: { name: 'string', classes: 'string[]' },
+  schema: { firstName: 'string', classes: 'string[]' },
   // optional: use mappings with field ids to prevent renamings breaking your app,
   //           or with field names to make handling renamings easy
-  mappings: { name: 'fld1234', classes: 'Classes student is enrolled in' },
+  mappings: { firstName: 'fld1234', classes: 'Classes student is enrolled in' },
 };
 
-export const classTable: Table<{ id: string, name: string }> = {
+export const classTable: Table<{ id: string, title: string }> = {
   name: 'class',
   baseId: 'app1234',
   tableId: 'tbl4567',
-  schema: { name: 'string' },
+  schema: { title: 'string' },
 };
 
 // Now we can get all the records in a table (a scan)
@@ -49,18 +50,18 @@ const classes = await db.scan(classTable);
 
 // Get, update and delete specific records:
 const student = await db.get(studentTable, 'rec1234');
-await db.update(studentTable, { id: 'rec1234', name: 'Adam' });
+await db.update(studentTable, { id: 'rec1234', firstName: 'Adam' });
 await db.remove(studentTable, 'rec5678');
 
 // Or for a more involved example:
-async function prefixNameOfFirstClassOfFirstStudent(namePrefix: string) {
+async function prefixTitleOfFirstClassOfFirstStudent(prefix: string) {
   const students = await db.scan(studentTable);
   if (!students[0]) throw new Error('There are no students');
   if (!students[0].classes[0]) throw new Error('First student does not have a class');
 
   const currentClass = await db.get(classTable, students[0].classes[0]);
-  const newName = namePrefix + currentClass.name;
-  await db.update(classTable, { id: currentClass.id, name: newName });
+  const newTitle = prefix + currentClass.title;
+  await db.update(classTable, { id: currentClass.id, title: newTitle });
 }
 
 // And should you ever need it, access to the raw Airtable JS SDK
