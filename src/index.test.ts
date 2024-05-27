@@ -9,6 +9,7 @@ interface Task {
   isOptional: boolean,
   project: string[],
   projectOwner: string | null,
+  createdAt: string,
 }
 
 interface Project {
@@ -36,6 +37,7 @@ interface Project {
       isOptional: 'fld7ZM4XEtrDxdJp7',
       project: 'fldlfUsb3gDXiHyFc',
       projectOwner: 'fldPkTg3m2M5RDaHD',
+      createdAt: 'fldu3wNlsHFFbIOLT',
     },
     schema: {
       name: 'string',
@@ -44,6 +46,7 @@ interface Project {
       isOptional: 'boolean',
       project: 'string[]',
       projectOwner: 'string | null',
+      createdAt: 'string',
     },
   };
   const taskTableWithFieldNames: Table<Task> = {
@@ -57,6 +60,7 @@ interface Project {
       isOptional: 'Is optional',
       project: 'Project',
       projectOwner: 'Project owner',
+      createdAt: 'Created at',
     },
     schema: {
       name: 'string',
@@ -65,6 +69,7 @@ interface Project {
       isOptional: 'boolean',
       project: 'string[]',
       projectOwner: 'string | null',
+      createdAt: 'string',
     },
   };
   const projectsTable: Table<Project> = {
@@ -102,6 +107,7 @@ interface Project {
       isOptional: false,
       project: ['recLUUmrS706HP1Yb'],
       projectOwner: 'Alice',
+      createdAt: '2024-04-30T23:52:11.000Z',
     },
     {
       id: 'recnFWM2RsVGobKCp',
@@ -111,6 +117,7 @@ interface Project {
       isOptional: true,
       project: [],
       projectOwner: null,
+      createdAt: '2024-04-30T23:52:11.000Z',
     },
   ];
   const expectedProjects: Project[] = [
