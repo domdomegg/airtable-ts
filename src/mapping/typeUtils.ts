@@ -66,7 +66,7 @@ export type AirtableTypeString =
 
 // Should map an AirtableTypeString to its cell format, as per
 // https://airtable.com/developers/web/api/field-model
-export type FromAirtableTypeString<T extends AirtableTypeString> =
+export type FromAirtableTypeString<T extends AirtableTypeString | 'unknown'> =
   // All Airtable types are actually nullable
   | null
   | (
@@ -107,7 +107,10 @@ export type FromAirtableTypeString<T extends AirtableTypeString> =
             | 'formula'
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ? FromAirtableTypeString<any>[] :
-              never);
+              T extends
+              | 'unknown'
+                ? unknown
+                : never);
 
 interface TypeDef {
   single: 'string' | 'number' | 'boolean',
@@ -115,7 +118,7 @@ interface TypeDef {
   nullable: boolean,
 }
 
-const parseType = (t: TsTypeString): TypeDef => {
+export const parseType = (t: TsTypeString): TypeDef => {
   if (t.endsWith('[] | null')) {
     return {
       single: t.slice(0, -('[] | null'.length)) as TypeDef['single'],

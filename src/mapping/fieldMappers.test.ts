@@ -38,10 +38,10 @@ describe('string', () => {
     expect(mapperPair.toAirtable('rec789')).toEqual(['rec789']);
   });
 
-  test('dateTime', () => {
-    const mapperPair = fieldMappers.string?.dateTime;
+  test.each(['dateTime', 'createdTime', 'lastModifiedTime'] as const)('%s', (airtableType) => {
+    const mapperPair = fieldMappers.string?.[airtableType];
     if (!mapperPair) {
-      throw new Error('Expected mapper pair for [string, dateTime]');
+      throw new Error(`Expected mapper pair for [string, ${airtableType}]`);
     }
     const validDateTimeString = '2023-04-09T12:34:56.789Z';
     const validDateTimeStringAlt1 = 'Sun Apr 09 2023 13:34:56.789 GMT+0100 (British Summer Time)';
@@ -131,8 +131,8 @@ describe('number', () => {
     }
 
     expect(mapperPair.fromAirtable(123)).toBe(123);
-    expect(() => mapperPair.fromAirtable(null)).toThrow('required');
-    expect(() => mapperPair.fromAirtable(undefined)).toThrow('required');
+    expect(() => mapperPair.fromAirtable(null)).toThrow('non-null');
+    expect(() => mapperPair.fromAirtable(undefined)).toThrow('non-null');
 
     expect(mapperPair.toAirtable(123)).toBe(123);
   });
@@ -147,8 +147,8 @@ describe('number', () => {
     }
 
     expect(mapperPair.fromAirtable(123)).toBe(123);
-    expect(() => mapperPair.fromAirtable(null)).toThrow('required');
-    expect(() => mapperPair.fromAirtable(undefined)).toThrow('required');
+    expect(() => mapperPair.fromAirtable(null)).toThrow('non-null');
+    expect(() => mapperPair.fromAirtable(undefined)).toThrow('non-null');
 
     expect(() => mapperPair.toAirtable(123)).toThrow('readonly');
   });
@@ -187,5 +187,107 @@ describe('string[]', () => {
     expect(mapperPair.toAirtable([])).toEqual([]);
     expect(mapperPair.toAirtable(['rec789'])).toEqual(['rec789']);
     expect(mapperPair.toAirtable(['rec789', 'rec012'])).toEqual(['rec789', 'rec012']);
+  });
+
+  test('multipleLookupValues', () => {
+    const mapperPair = fieldMappers['string[]']?.multipleLookupValues;
+    if (!mapperPair) {
+      throw new Error('Expected mapper pair for [string[], multipleLookupValues]');
+    }
+
+    expect(mapperPair.fromAirtable(['value1', 'value2'])).toEqual(['value1', 'value2']);
+    expect(mapperPair.fromAirtable(null)).toEqual([]);
+    expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+    expect(mapperPair.fromAirtable([])).toEqual([]);
+    expect(() => mapperPair.fromAirtable([1, 2, 3])).toThrow();
+
+    expect(() => mapperPair.toAirtable(['value1', 'value2'])).toThrow('readonly');
+  });
+
+  test('formula', () => {
+    const mapperPair = fieldMappers['string[]']?.formula;
+    if (!mapperPair) {
+      throw new Error('Expected mapper pair for [string[], formula]');
+    }
+
+    expect(mapperPair.fromAirtable(['value1', 'value2'])).toEqual(['value1', 'value2']);
+    expect(mapperPair.fromAirtable(null)).toEqual([]);
+    expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+    expect(mapperPair.fromAirtable([])).toEqual([]);
+    expect(() => mapperPair.fromAirtable([1, 2, 3])).toThrow();
+
+    expect(() => mapperPair.toAirtable(['value1', 'value2'])).toThrow('readonly');
+  });
+});
+
+describe('unknown', () => {
+  test.each([
+    ['string', 'example'],
+    ['string | null', 'example'],
+    ['string | null', null],
+    ['boolean', true],
+    ['boolean | null', true],
+    ['boolean | null', null],
+    ['number', 123],
+    ['number | null', 123],
+    ['number | null', null],
+    ['string[]', []],
+    ['string[]', ['rec123']],
+    ['string[]', ['rec123', 'rec456']],
+    ['string[] | null', []],
+    ['string[] | null', ['rec123']],
+    ['string[] | null', ['rec123', 'rec456']],
+    ['string[] | null', null],
+  ] as const)('unknown airtable type for %s maps same type successfully', (tsType, value) => {
+    const mapperPair = fieldMappers[tsType]?.unknown;
+    if (!mapperPair) {
+      throw new Error(`Expected mapper pair for [${tsType}, unknown]`);
+    }
+
+    expect(mapperPair.fromAirtable(value)).toEqual(value);
+  });
+
+  test.each([
+    ['string', ['example']],
+    ['string | null', ['example']],
+    ['boolean', [true]],
+    ['boolean | null', [true]],
+    ['number', [123]],
+    ['number | null', [123]],
+  ] as const)('unknown airtable type for %s maps singleton array of same type successfully', (tsType, value) => {
+    const mapperPair = fieldMappers[tsType]?.unknown;
+    if (!mapperPair) {
+      throw new Error(`Expected mapper pair for [${tsType}, unknown]`);
+    }
+
+    expect(mapperPair.fromAirtable(value)).toEqual(value[0]);
+  });
+
+  test.each([
+    ['string', 'array with >1 element', ['example1', 'example2']],
+    ['string', 'number', 123],
+    ['string', 'number array', [123]],
+    ['string', 'null array', [null]],
+  ] as const)('unknown airtable type for %s throws for invalid types: %s', (tsType, _desc, value) => {
+    const mapperPair = fieldMappers[tsType]?.unknown;
+    if (!mapperPair) {
+      throw new Error(`Expected mapper pair for [${tsType}, unknown]`);
+    }
+
+    expect(() => mapperPair.fromAirtable(value)).toThrow();
+  });
+
+  test.each([
+    ['string', 'empty array', '', []],
+    ['string', 'null', '', null],
+    ['boolean', 'empty array', false, []],
+    ['boolean', 'null', false, null],
+  ] as const)('unknown airtable type for %s casts %s to default (%s)', (tsType, _desc, toValue, fromValue) => {
+    const mapperPair = fieldMappers[tsType]?.unknown;
+    if (!mapperPair) {
+      throw new Error(`Expected mapper pair for [${tsType}, unknown]`);
+    }
+
+    expect(mapperPair.fromAirtable(fromValue)).toEqual(toValue);
   });
 });

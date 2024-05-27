@@ -3,8 +3,27 @@ import { AirtableRecord, AirtableTable } from '../types';
 import { fieldMappers } from './fieldMappers';
 import { mapRecordFieldNamesAirtableToTs, mapRecordFieldNamesTsToAirtable } from './nameMapper';
 import {
-  airtableFieldNameTsTypes, FromTsTypeString, Item, matchesType, Table, TsTypeString,
+  airtableFieldNameTsTypes, AirtableTypeString, FromTsTypeString, Item, matchesType, Table, TsTypeString,
 } from './typeUtils';
+
+const getMapper = (tsType: TsTypeString, airtableType: string) => {
+  const tsMapper = fieldMappers[tsType];
+
+  if (!tsMapper) {
+    throw new Error(`[airtable-ts] No mappers for ts type ${tsType}`);
+  }
+
+  if (tsMapper[airtableType as AirtableTypeString]) {
+    return tsMapper[airtableType as AirtableTypeString]!;
+  }
+
+  if (tsMapper.unknown) {
+    console.warn(`[airtable-ts] Unknown airtable type ${airtableType}. This is not fully supported and exact mapping behaviour may change in a future release.`);
+    return tsMapper.unknown;
+  }
+
+  throw new Error(`[airtable-ts] Expected to be able to map to ts type ${tsType}, but got airtable type ${airtableType} which can't.`);
+};
 
 /**
  * This function coerces an Airtable record to a TypeScript object, given an
@@ -38,19 +57,10 @@ const mapRecordTypeAirtableToTs = <
 
     const value = record.fields[fieldDefinition.name];
 
-    const tsMapper = fieldMappers[tsType];
-    if (!tsMapper) {
-      throw new Error(`[airtable-ts] No mappers for ts type ${tsType}`);
-    }
-    const specificMapper = tsMapper[fieldDefinition.type as keyof typeof tsMapper]?.fromAirtable;
-    if (!specificMapper) {
-      // eslint-disable-next-line no-underscore-dangle
-      throw new Error(`[airtable-ts] Expected field ${record._table.name}.${fieldNameOrId} to be able to map to ts type ${tsType}, but got airtable type ${fieldDefinition.type} which can't.`);
-    }
-
     try {
+      const { fromAirtable } = getMapper(tsType, fieldDefinition.type);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      item[fieldNameOrId] = specificMapper(value as any) as FromTsTypeString<T[keyof T]>;
+      item[fieldNameOrId] = fromAirtable(value as any) as FromTsTypeString<T[keyof T]>;
     } catch (error) {
       if (error instanceof Error) {
         // eslint-disable-next-line no-underscore-dangle
@@ -112,17 +122,19 @@ const mapRecordTypeTsToAirtable = <
       throw new Error(`[airtable-ts] Failed to get Airtable field ${fieldNameOrId}`);
     }
 
-    const tsMapper = fieldMappers[tsType];
-    if (!tsMapper) {
-      throw new Error(`[airtable-ts] No mappers for ts type ${tsType}`);
+    try {
+      const { toAirtable } = getMapper(tsType, fieldDefinition.type);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      item[fieldNameOrId] = (toAirtable as any)(value);
+    } catch (error) {
+      if (error instanceof Error) {
+        // eslint-disable-next-line no-underscore-dangle
+        error.message = `Failed to map field ${airtableTable.name}.${fieldNameOrId}: ${error.message}`;
+        // eslint-disable-next-line no-underscore-dangle
+        error.stack = `Error: Failed to map field ${airtableTable.name}.${fieldNameOrId}: ${error.stack?.startsWith('Error: ') ? error.stack.slice('Error: '.length) : error.stack}`;
+      }
+      throw error;
     }
-    const specificMapper = tsMapper[fieldDefinition.type as keyof typeof tsMapper]?.toAirtable;
-    if (!specificMapper) {
-      throw new Error(`[airtable-ts] Expected field ${airtableTable.name}.${fieldNameOrId} to be able to map to airtable type \`${fieldDefinition.type}\`, but got ts type \`${tsType}\` which can't.`);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    item[fieldNameOrId] = (specificMapper as any)(value);
   });
 
   return Object.assign(item, { id: tsRecord.id });
