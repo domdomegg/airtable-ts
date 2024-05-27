@@ -101,6 +101,38 @@ export const fieldMappers: Mapper = {
         return date.toJSON();
       },
     },
+    createdTime: {
+      toAirtable: (value) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime string');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        const date = new Date(value ?? '');
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime string');
+        }
+        return date.toJSON();
+      },
+    },
+    lastModifiedTime: {
+      toAirtable: (value) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime string');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        const date = new Date(value ?? '');
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime string');
+        }
+        return date.toJSON();
+      },
+    },
     multipleLookupValues: {
       toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
@@ -192,6 +224,42 @@ export const fieldMappers: Mapper = {
       },
     },
     dateTime: {
+      toAirtable: (value) => {
+        if (value === null) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        if (value === null || value === undefined) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+    },
+    createdTime: {
+      toAirtable: (value) => {
+        if (value === null) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        if (value === null || value === undefined) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+    },
+    lastModifiedTime: {
       toAirtable: (value) => {
         if (value === null) return null;
         const date = new Date(value);
@@ -325,6 +393,38 @@ export const fieldMappers: Mapper = {
         return Math.floor(date.getTime() / 1000);
       },
     },
+    createdTime: {
+      toAirtable: (value) => {
+        const date = new Date(value * 1000);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        const date = new Date(value ?? '');
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return Math.floor(date.getTime() / 1000);
+      },
+    },
+    lastModifiedTime: {
+      toAirtable: (value) => {
+        const date = new Date(value * 1000);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        const date = new Date(value ?? '');
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return Math.floor(date.getTime() / 1000);
+      },
+    },
     multipleLookupValues: {
       toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: (value) => {
@@ -390,6 +490,42 @@ export const fieldMappers: Mapper = {
     },
     // Number assumed to be unix time in seconds
     dateTime: {
+      toAirtable: (value) => {
+        if (value === null) return null;
+        const date = new Date(value * 1000);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        if (value === null || value === undefined) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return Math.floor(date.getTime() / 1000);
+      },
+    },
+    createdTime: {
+      toAirtable: (value) => {
+        if (value === null) return null;
+        const date = new Date(value * 1000);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return date.toJSON();
+      },
+      fromAirtable: (value) => {
+        if (value === null || value === undefined) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          throw new Error('[airtable-ts] Invalid dateTime');
+        }
+        return Math.floor(date.getTime() / 1000);
+      },
+    },
+    lastModifiedTime: {
       toAirtable: (value) => {
         if (value === null) return null;
         const date = new Date(value * 1000);
