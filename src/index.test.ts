@@ -87,6 +87,10 @@ interface Project {
     },
   };
 
+  // PREPARE: Delete any orphaned test projects created by failed past runs
+  const toDelete = (await db.scan(projectsTable)).filter((p) => p.name === 'Project test');
+  await Promise.all(toDelete.map((p) => db.remove(projectsTable, p.id)));
+
   // WHEN
   const records1 = await db.scan(taskTableWithFieldIds);
   const records2 = await db.scan(taskTableWithFieldNames);
@@ -134,4 +138,18 @@ interface Project {
   expect(records1).toEqual(expectedTasks);
   expect(records2).toEqual(expectedTasks);
   expect(projects).toEqual(expectedProjects);
+
+  const newProject = await db.insert(projectsTable, {
+    name: 'Project test',
+    owner: 'Adam',
+  });
+  expect(newProject).toEqual({
+    formattedSummary: 'Adam has 0 task(s) to complete.',
+    id: expect.stringMatching(/^rec[A-Za-z0-9]{14}$/),
+    name: 'Project test',
+    owner: 'Adam',
+    pendingTasks: 0,
+    tasks: [],
+  });
+  await db.remove(projectsTable, newProject.id);
 });

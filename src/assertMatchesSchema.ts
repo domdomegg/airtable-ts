@@ -15,7 +15,7 @@ import {
 export function assertMatchesSchema<T extends Item>(
   table: Table<T>,
   data: unknown,
-  mode: 'full' | 'partial' = 'full',
+  mode: 'full' | 'partial' = 'partial',
 ): asserts data is T {
   if (typeof data !== 'object' || data === null) {
     throw new Error(`[airtable-ts] Item for ${table.name} is not an object`);

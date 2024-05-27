@@ -42,7 +42,7 @@ export class AirtableTs {
     return records.map((record) => mapRecordFromAirtable(table, record));
   }
 
-  async insert<T extends Item>(table: Table<T>, data: Omit<T, 'id'>): Promise<T> {
+  async insert<T extends Item>(table: Table<T>, data: Partial<Omit<T, 'id'>>): Promise<T> {
     assertMatchesSchema(table, { ...data, id: 'placeholder' });
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
     const record = await airtableTable.create(mapRecordToAirtable(table, data as Partial<T>, airtableTable)) as AirtableRecord;
@@ -50,7 +50,7 @@ export class AirtableTs {
   }
 
   async update<T extends Item>(table: Table<T>, data: Partial<T> & { id: string }): Promise<T> {
-    assertMatchesSchema(table, { ...data }, 'partial');
+    assertMatchesSchema(table, { ...data });
     const { id, ...withoutId } = data;
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
     const record = await airtableTable.update(data.id, mapRecordToAirtable(table, withoutId as Partial<T>, airtableTable)) as AirtableRecord;
