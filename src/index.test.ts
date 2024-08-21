@@ -158,5 +158,8 @@ interface Project {
     pendingTasks: 0,
     tasks: [],
   });
-  await db.remove(projectsTable, newProject.id);
+  const removeResult = await db.remove(projectsTable, newProject.id);
+  expect(removeResult).toEqual({
+    id: newProject.id,
+  });
 });

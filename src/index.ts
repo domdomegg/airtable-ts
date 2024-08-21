@@ -57,13 +57,13 @@ export class AirtableTs {
     return mapRecordFromAirtable(table, record);
   }
 
-  async remove<T extends Item>(table: Table<T>, id: string): Promise<T> {
+  async remove<T extends Item>(table: Table<T>, id: string): Promise<{ id: string }> {
     if (!id) {
       throw new Error(`[airtable-ts] Tried to remove record in ${table.name} with no id`);
     }
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
-    const record = await airtableTable.destroy(id) as AirtableRecord;
-    return mapRecordFromAirtable(table, record);
+    const record = await airtableTable.destroy(id);
+    return { id: record.id };
   }
 }
 
