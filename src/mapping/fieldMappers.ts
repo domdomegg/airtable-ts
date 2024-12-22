@@ -17,26 +17,6 @@ const fallbackMapperPair = <T, F1, F2>(toFallback: F1, fromFallback: F2) => ({
   fromAirtable: (value: T | null | undefined) => value ?? fromFallback,
 });
 
-const dateTimeMapperPair = {
-  // Number assumed to be unix time in seconds
-  toAirtable: (value: string | number | null) => {
-    if (value === null) return null;
-    const date = new Date(typeof value === 'number' ? value * 1000 : value);
-    if (Number.isNaN(date.getTime())) {
-      throw new Error('[airtable-ts] Invalid dateTime');
-    }
-    return date.toJSON();
-  },
-  fromAirtable: (value: string | null | undefined) => {
-    if (value === null || value === undefined) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      throw new Error('[airtable-ts] Invalid dateTime');
-    }
-    return date.toJSON();
-  },
-};
-
 const readonly = (airtableType: AirtableTypeString) => () => { throw new Error(`[airtable-ts] ${airtableType} type field is readonly`); };
 const coerce = <T extends TsTypeString>(airtableType: AirtableTypeString | 'unknown', tsType: T) => (value: unknown): FromTsTypeString<T> => {
   const parsedType = parseType(tsType);
@@ -68,6 +48,72 @@ const coerce = <T extends TsTypeString>(airtableType: AirtableTypeString | 'unkn
   throw new Error(`[airtable-ts] Can't coerce ${airtableType} to a ${tsType}, as it was of type ${typeof value}`);
 };
 
+const dateTimeMapperPair = {
+  // Number assumed to be unix time in seconds
+  toAirtable: (value: string | number | null) => {
+    if (value === null) return null;
+    const date = new Date(typeof value === 'number' ? value * 1000 : value);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error('[airtable-ts] Invalid dateTime');
+    }
+    return date.toJSON();
+  },
+  fromAirtable: (value: string | null | undefined) => {
+    if (value === null || value === undefined) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error('[airtable-ts] Invalid dateTime');
+    }
+    return date.toJSON();
+  },
+};
+
+const aiTextMapperPair = {
+  toAirtable: readonly('aiText'),
+  fromAirtable: (obj: object | null | undefined) => {
+    if (!obj || typeof obj !== 'object' || !('value' in obj) || typeof obj.value !== 'string') return null;
+    return obj.value;
+  },
+};
+
+const barcodeMapperPair = {
+  toAirtable: (value: string | null) => ({ text: value }),
+  fromAirtable: (obj: object | null | undefined) => {
+    if (!obj || typeof obj !== 'object' || !('text' in obj) || typeof obj.text !== 'string') return null;
+    return obj.text;
+  },
+};
+
+const collaboratorMapperPair = {
+  toAirtable: (value: string | null) => ({ id: value }),
+  fromAirtable: (obj: object | null | undefined) => {
+    if (!obj || typeof obj !== 'object' || !('id' in obj) || typeof obj.id !== 'string') return null;
+    return obj.id;
+  },
+};
+
+const multipleCollaboratorsMapperPair = {
+  toAirtable: (value: string[] | null) => value as unknown as object[],
+  fromAirtable: (obj: object[] | null | undefined) => {
+    return obj?.map((v) => ('id' in v && typeof v.id === 'string' ? v.id : null!)).filter(Boolean) ?? null;
+  },
+};
+
+const multipleAttachmentsMapperPair = {
+  toAirtable: readonly('multipleAttachments'),
+  fromAirtable: (obj: object[] | null | undefined) => {
+    return obj?.map((v) => ('url' in v && typeof v.url === 'string' ? v.url : null!)).filter(Boolean) ?? null;
+  },
+};
+
+const buttonMapperPair = {
+  toAirtable: readonly('button'),
+  fromAirtable: (obj: object | null | undefined) => {
+    if (!obj || typeof obj !== 'object' || !('label' in obj) || typeof obj.label !== 'string') return null;
+    return obj.label;
+  },
+};
+
 const stringOrNull: Mapper = {
   'string | null': {
     url: fallbackMapperPair(null, null),
@@ -77,6 +123,26 @@ const stringOrNull: Mapper = {
     multilineText: fallbackMapperPair(null, null),
     richText: fallbackMapperPair(null, null),
     singleSelect: fallbackMapperPair(null, null),
+    aiText: aiTextMapperPair,
+    barcode: barcodeMapperPair,
+    button: buttonMapperPair,
+    singleCollaborator: collaboratorMapperPair,
+    multipleCollaborators: {
+      toAirtable: (value) => (value ? multipleCollaboratorsMapperPair.toAirtable([value]) : []),
+      fromAirtable: (value) => coerce('multipleCollaborators', 'string | null')(multipleCollaboratorsMapperPair.fromAirtable(value)),
+    },
+    createdBy: {
+      toAirtable: readonly('createdBy'),
+      fromAirtable: collaboratorMapperPair.fromAirtable,
+    },
+    lastModifiedBy: {
+      toAirtable: readonly('lastModifiedBy'),
+      fromAirtable: collaboratorMapperPair.fromAirtable,
+    },
+    multipleAttachments: {
+      toAirtable: readonly('multipleAttachments'),
+      fromAirtable: (value) => coerce('multipleAttachments', 'string | null')(multipleAttachmentsMapperPair.fromAirtable(value)),
+    },
     multipleSelects: {
       toAirtable: (value) => (value ? [value] : []),
       fromAirtable: coerce('multipleSelects', 'string | null'),
@@ -215,6 +281,8 @@ const stringArrayOrNull: Mapper = {
   'string[] | null': {
     multipleSelects: fallbackMapperPair([], []),
     multipleRecordLinks: fallbackMapperPair([], []),
+    multipleCollaborators: multipleCollaboratorsMapperPair,
+    multipleAttachments: multipleAttachmentsMapperPair,
     multipleLookupValues: {
       toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
       fromAirtable: coerce('multipleLookupValues', 'string[] | null'),
