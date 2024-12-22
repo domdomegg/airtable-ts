@@ -108,9 +108,21 @@ export type FromAirtableTypeString<T extends AirtableTypeString | 'unknown'> =
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ? FromAirtableTypeString<any>[] :
               T extends
-              | 'unknown'
-                ? unknown
-                : never);
+              | 'aiText'
+              | 'barcode'
+              | 'singleCollaborator'
+              | 'createdBy'
+              | 'modifiedBy'
+              | 'button'
+                ? object :
+                T extends
+                | 'multipleCollaborators'
+                | 'multipleAttachments'
+                  ? object[] :
+                  T extends
+                  | 'unknown'
+                    ? unknown
+                    : never);
 
 interface TypeDef {
   single: 'string' | 'number' | 'boolean',
