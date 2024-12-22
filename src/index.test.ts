@@ -10,6 +10,7 @@ interface Task {
   project: string[],
   projectOwner: string | null,
   createdAt: string,
+  projectPlanPdf: string,
 }
 
 interface Project {
@@ -38,6 +39,7 @@ interface Project {
       project: 'fldlfUsb3gDXiHyFc',
       projectOwner: 'fldPkTg3m2M5RDaHD',
       createdAt: 'fldu3wNlsHFFbIOLT',
+      projectPlanPdf: 'fld7jUphARRCTn8Wc',
     },
     schema: {
       name: 'string',
@@ -47,6 +49,7 @@ interface Project {
       project: 'string[]',
       projectOwner: 'string | null',
       createdAt: 'string',
+      projectPlanPdf: 'string',
     },
   };
   const taskTableWithFieldNames: Table<Task> = {
@@ -61,6 +64,7 @@ interface Project {
       project: 'Project',
       projectOwner: 'Project owner',
       createdAt: 'Created at',
+      projectPlanPdf: 'Project plan PDF',
     },
     schema: {
       name: 'string',
@@ -70,6 +74,7 @@ interface Project {
       project: 'string[]',
       projectOwner: 'string | null',
       createdAt: 'string',
+      projectPlanPdf: 'string',
     },
   };
   const projectsTable: Table<Project> = {
@@ -112,6 +117,7 @@ interface Project {
       project: ['recLUUmrS706HP1Yb'],
       projectOwner: 'Alice',
       createdAt: '2024-04-30T23:52:11.000Z',
+      projectPlanPdf: expect.stringContaining('airtableusercontent.com'),
     },
     {
       id: 'recnFWM2RsVGobKCp',
@@ -122,6 +128,7 @@ interface Project {
       project: [],
       projectOwner: null,
       createdAt: '2024-04-30T23:52:11.000Z',
+      projectPlanPdf: '',
     },
   ];
   const expectedProjects: Project[] = [
