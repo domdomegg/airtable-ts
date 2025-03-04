@@ -27,7 +27,7 @@
     "eslint": "^8.56.0",
     "eslint-config-domdomegg": "^1.2.3",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.4"
+    "vitest": "^3.0.7"
   },
   "eslintConfig": {
     "extends": [
