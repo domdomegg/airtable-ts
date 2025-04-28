@@ -2,6 +2,7 @@ import {
   AirtableTypeString, FromAirtableTypeString, FromTsTypeString, TsTypeString,
   parseType,
 } from './typeUtils';
+import { AirtableTsError } from '../AirtableTsError';
 
 type Mapper = {
   [T in TsTypeString]?: {
@@ -17,7 +18,7 @@ const fallbackMapperPair = <T, F1, F2>(toFallback: F1, fromFallback: F2) => ({
   fromAirtable: (value: T | null | undefined) => value ?? fromFallback,
 });
 
-const readonly = (airtableType: AirtableTypeString) => () => { throw new Error(`[airtable-ts] ${airtableType} type field is readonly`); };
+const readonly = (airtableType: AirtableTypeString) => () => { throw new AirtableTsError(`${airtableType} type field is readonly`); };
 const coerce = <T extends TsTypeString>(airtableType: AirtableTypeString | 'unknown', tsType: T) => (value: unknown): FromTsTypeString<T> => {
   const parsedType = parseType(tsType);
 
@@ -42,10 +43,10 @@ const coerce = <T extends TsTypeString>(airtableType: AirtableTypeString | 'unkn
   }
 
   if (!parsedType.array && Array.isArray(value) && value.length !== 1) {
-    throw new Error(`[airtable-ts] Can't coerce ${airtableType} to a ${tsType}, as there were ${value.length} array entries`);
+    throw new AirtableTsError(`Can't coerce ${airtableType} to a ${tsType}, as there were ${value.length} array entries`);
   }
 
-  throw new Error(`[airtable-ts] Can't coerce ${airtableType} to a ${tsType}, as it was of type ${typeof value}`);
+  throw new AirtableTsError(`Can't coerce ${airtableType} to a ${tsType}, as it was of type ${typeof value}`);
 };
 
 const dateTimeMapperPair = {
@@ -54,7 +55,7 @@ const dateTimeMapperPair = {
     if (value === null) return null;
     const date = new Date(typeof value === 'number' ? value * 1000 : value);
     if (Number.isNaN(date.getTime())) {
-      throw new Error('[airtable-ts] Invalid dateTime');
+      throw new AirtableTsError('Invalid dateTime');
     }
     return date.toJSON();
   },
@@ -62,7 +63,7 @@ const dateTimeMapperPair = {
     if (value === null || value === undefined) return null;
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      throw new Error('[airtable-ts] Invalid dateTime');
+      throw new AirtableTsError('Invalid dateTime');
     }
     return date.toJSON();
   },
@@ -217,7 +218,7 @@ const numberOrNull: Mapper = {
         if (nullableValue === null) return null;
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
-          throw new Error('[airtable-ts] Invalid date');
+          throw new AirtableTsError('Invalid date');
         }
         return Math.floor(date.getTime() / 1000);
       },
@@ -229,7 +230,7 @@ const numberOrNull: Mapper = {
         if (nullableValue === null) return null;
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
-          throw new Error('[airtable-ts] Invalid date');
+          throw new AirtableTsError('Invalid date');
         }
         return Math.floor(date.getTime() / 1000);
       },
@@ -241,7 +242,7 @@ const numberOrNull: Mapper = {
         if (nullableValue === null) return null;
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
-          throw new Error('[airtable-ts] Invalid date');
+          throw new AirtableTsError('Invalid date');
         }
         return Math.floor(date.getTime() / 1000);
       },
@@ -253,7 +254,7 @@ const numberOrNull: Mapper = {
         if (nullableValue === null) return null;
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
-          throw new Error('[airtable-ts] Invalid date');
+          throw new AirtableTsError('Invalid date');
         }
         return Math.floor(date.getTime() / 1000);
       },
@@ -284,11 +285,11 @@ const stringArrayOrNull: Mapper = {
     multipleCollaborators: multipleCollaboratorsMapperPair,
     multipleAttachments: multipleAttachmentsMapperPair,
     multipleLookupValues: {
-      toAirtable: () => { throw new Error('[airtable-ts] lookup type field is readonly'); },
+      toAirtable: () => { throw new AirtableTsError('lookup type field is readonly'); },
       fromAirtable: coerce('multipleLookupValues', 'string[] | null'),
     },
     formula: {
-      toAirtable: () => { throw new Error('[airtable-ts] formula type field is readonly'); },
+      toAirtable: () => { throw new AirtableTsError('formula type field is readonly'); },
       fromAirtable: coerce('multipleLookupValues', 'string[] | null'),
     },
     unknown: {
@@ -307,7 +308,7 @@ export const fieldMappers: Mapper = {
         fromAirtable: (value: null) => {
           const nullableValue = nullablePair.fromAirtable(value);
           if (nullableValue === null && ['multipleRecordLinks', 'dateTime', 'createdTime', 'lastModifiedTime'].includes(airtableType)) {
-            throw new Error(`[airtable-ts] Expected non-null or non-empty value to map to string for field type ${airtableType}`);
+            throw new AirtableTsError(`Expected non-null or non-empty value to map to string for field type ${airtableType}`);
           }
           return nullableValue ?? '';
         },
@@ -333,7 +334,7 @@ export const fieldMappers: Mapper = {
         fromAirtable: (value: null) => {
           const nullableValue = nullablePair.fromAirtable(value);
           if (nullableValue === null) {
-            throw new Error(`[airtable-ts] Expected non-null or non-empty value to map to number for field type ${airtableType}`);
+            throw new AirtableTsError(`Expected non-null or non-empty value to map to number for field type ${airtableType}`);
           }
           return nullableValue;
         },

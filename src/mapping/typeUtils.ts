@@ -1,3 +1,5 @@
+import { AirtableTsError } from '../AirtableTsError';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TsTypeString = NonNullToString<any> | ToTsTypeString<any>;
 
@@ -211,7 +213,7 @@ const arrayToSingleType = (tsType: TsTypeString): TsTypeString => {
   if (tsType.endsWith('[]')) {
     return tsType.slice(0, -'[]'.length) as TsTypeString;
   }
-  throw new Error(`[airtable-ts] Not an array type: ${tsType}`);
+  throw new AirtableTsError(`Not an array type: ${tsType}`);
 };
 
 /**

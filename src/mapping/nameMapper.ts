@@ -1,6 +1,7 @@
 import {
   Item, Table, FromTsTypeString, TsTypeString,
 } from './typeUtils';
+import { AirtableTsError } from '../AirtableTsError';
 
 /**
  * Maps a TS object (matching table.mappings) to another TS object (matching table.schema),
@@ -98,15 +99,15 @@ export const mapRecordFieldNamesTsToAirtable = <T extends Item>(table: Table<T>,
           }
 
           // This should be unreachable because of our types
-          throw new Error(`[airtable-ts] Expected field ${table.name}.${outputFieldName} to match type \`${tsType}\` but got null. This should never happen in normal operation as it should be caught before this point.`);
+          throw new AirtableTsError(`Expected field ${table.name}.${outputFieldName} to match type \`${tsType}\` but got null. This should never happen in normal operation as it should be caught before this point.`);
         }
 
         if (!Array.isArray(value)) {
-          throw new Error(`[airtable-ts] Got non-array type ${typeof value} for ${table.name}.${outputFieldName}, but expected ${table.schema[outputFieldName]}.`);
+          throw new AirtableTsError(`Got non-array type ${typeof value} for ${table.name}.${outputFieldName}, but expected ${table.schema[outputFieldName]}.`);
         }
 
         if (value.length !== mappingToAirtable.length) {
-          throw new Error(`[airtable-ts] Got ${value.length} values for ${table.name}.${outputFieldName}, but ${mappingToAirtable.length} mappings. Expected these to be the same.`);
+          throw new AirtableTsError(`Got ${value.length} values for ${table.name}.${outputFieldName}, but ${mappingToAirtable.length} mappings. Expected these to be the same.`);
         }
 
         return mappingToAirtable.map((airtableFieldName, index) => [airtableFieldName, value[index]]);

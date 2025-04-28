@@ -1,6 +1,7 @@
 import {
   matchesType, TsTypeString, Item, Table,
 } from './mapping/typeUtils';
+import { AirtableTsError } from './AirtableTsError';
 
 /**
  * In theory, this should never catch stuff because our type mapping logic should
@@ -18,7 +19,7 @@ export function assertMatchesSchema<T extends Item>(
   mode: 'full' | 'partial' = 'partial',
 ): asserts data is T {
   if (typeof data !== 'object' || data === null) {
-    throw new Error(`[airtable-ts] Item for ${table.name} is not an object`);
+    throw new AirtableTsError(`Item for ${table.name} is not an object`);
   }
 
   (Object.entries(table.schema) as ([keyof T & string, TsTypeString])[]).forEach(([fieldName, type]) => {
@@ -29,11 +30,11 @@ export function assertMatchesSchema<T extends Item>(
         return;
       }
 
-      throw new Error(`[airtable-ts] Item for ${table.name} table is missing field '${fieldName}' (expected ${type})`);
+      throw new AirtableTsError(`Item for ${table.name} table is missing field '${fieldName}' (expected ${type})`);
     }
 
     if (!matchesType(value, type)) {
-      throw new Error(`[airtable-ts] Item for ${table.name} table has invalid value for field '${fieldName}' (actual type ${typeof value}, but expected ${type})`);
+      throw new AirtableTsError(`Item for ${table.name} table has invalid value for field '${fieldName}' (actual type ${typeof value}, but expected ${type})`);
     }
   });
 }

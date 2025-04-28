@@ -8,6 +8,7 @@ import {
 } from './types';
 import { getFields } from './getFields';
 import { wrapToCatchAirtableErrors } from './wrapToCatchAirtableErrors';
+import { AirtableTsError } from './AirtableTsError';
 
 export class AirtableTs {
   public airtable: Airtable;
@@ -25,12 +26,12 @@ export class AirtableTs {
 
   async get<T extends Item>(table: Table<T>, id: string): Promise<T> {
     if (!id) {
-      throw new Error(`[airtable-ts] Tried to get record in ${table.name} with no id`);
+      throw new AirtableTsError(`Tried to get record in ${table.name} with no id`);
     }
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
     const record = await airtableTable.find(id) as AirtableRecord;
     if (!record) {
-      throw new Error(`[airtable-ts] Failed to find record in ${table.name} with key ${id}`);
+      throw new AirtableTsError(`Failed to find record in ${table.name} with key ${id}`);
     }
     return mapRecordFromAirtable(table, record);
   }
@@ -61,7 +62,7 @@ export class AirtableTs {
 
   async remove<T extends Item>(table: Table<T>, id: string): Promise<{ id: string }> {
     if (!id) {
-      throw new Error(`[airtable-ts] Tried to remove record in ${table.name} with no id`);
+      throw new AirtableTsError(`Tried to remove record in ${table.name} with no id`);
     }
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
     const record = await airtableTable.destroy(id);

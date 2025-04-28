@@ -5,12 +5,13 @@ import { mapRecordFieldNamesAirtableToTs, mapRecordFieldNamesTsToAirtable } from
 import {
   airtableFieldNameTsTypes, AirtableTypeString, FromTsTypeString, Item, matchesType, Table, TsTypeString,
 } from './typeUtils';
+import { AirtableTsError } from '../AirtableTsError';
 
 const getMapper = (tsType: TsTypeString, airtableType: string) => {
   const tsMapper = fieldMappers[tsType];
 
   if (!tsMapper) {
-    throw new Error(`[airtable-ts] No mappers for ts type ${tsType}`);
+    throw new AirtableTsError(`No mappers for ts type ${tsType}`);
   }
 
   if (tsMapper[airtableType as AirtableTypeString]) {
@@ -22,7 +23,7 @@ const getMapper = (tsType: TsTypeString, airtableType: string) => {
     return tsMapper.unknown;
   }
 
-  throw new Error(`[airtable-ts] Expected to be able to map to ts type ${tsType}, but got airtable type ${airtableType} which can't.`);
+  throw new AirtableTsError(`Expected to be able to map to ts type ${tsType}, but got airtable type ${airtableType} which can't.`);
 };
 
 /**
@@ -52,7 +53,7 @@ const mapRecordTypeAirtableToTs = <
     // eslint-disable-next-line no-underscore-dangle
     const fieldDefinition = record._table.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
     if (!fieldDefinition) {
-      throw new Error(`[airtable-ts] Failed to get Airtable field ${fieldNameOrId}`);
+      throw new AirtableTsError(`Failed to get Airtable field ${fieldNameOrId}`);
     }
 
     const value = record.fields[fieldDefinition.name];
@@ -113,13 +114,13 @@ const mapRecordTypeTsToAirtable = <
 
     if (!matchesType(value, tsType)) {
       // This should be unreachable because of our types
-      throw new Error(`[airtable-ts] Expected field ${airtableTable.name}.${fieldNameOrId} to match type \`${tsType}\` but got value \`${JSON.stringify(value)}\`. This should never happen in normal operation as it should be caught before this point.`);
+      throw new AirtableTsError(`Expected field ${airtableTable.name}.${fieldNameOrId} to match type \`${tsType}\` but got value \`${JSON.stringify(value)}\`. This should never happen in normal operation as it should be caught before this point.`);
     }
 
     // eslint-disable-next-line no-underscore-dangle
     const fieldDefinition = airtableTable.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
     if (!fieldDefinition) {
-      throw new Error(`[airtable-ts] Failed to get Airtable field ${fieldNameOrId}`);
+      throw new AirtableTsError(`Failed to get Airtable field ${fieldNameOrId}`);
     }
 
     try {

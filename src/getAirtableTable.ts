@@ -2,6 +2,7 @@ import Airtable from 'airtable';
 import axios from 'axios';
 import { Item, Table } from './mapping/typeUtils';
 import { AirtableTable, CompleteAirtableTsOptions } from './types';
+import { AirtableTsError } from './AirtableTsError';
 
 export const getAirtableTable = async <T extends Item>(airtable: Airtable, table: Table<T>, options: CompleteAirtableTsOptions): Promise<AirtableTable> => {
   const airtableTable = airtable.base(table.baseId).table(table.tableId);
@@ -16,7 +17,7 @@ export const getAirtableTable = async <T extends Item>(airtable: Airtable, table
   const baseSchema = await getAirtableBaseSchema(table.baseId, options);
   const tableDefinition = baseSchema.find((t) => t.id === table.tableId);
   if (!tableDefinition) {
-    throw new Error(`[airtable-ts] Failed to find table ${table.tableId} in base ${table.baseId}`);
+    throw new AirtableTsError(`Failed to find table ${table.tableId} in base ${table.baseId}`);
   }
 
   return Object.assign(
@@ -42,7 +43,7 @@ const getAirtableBaseSchema = async (baseId: string, options: CompleteAirtableTs
 
   // eslint-disable-next-line no-underscore-dangle
   if (!options.apiKey) {
-    throw new Error('[airtable-ts] Missing API key');
+    throw new AirtableTsError('Missing API key');
   }
   const res = await axios<{ tables: BaseSchema }>({
     baseURL: options.endpointUrl ?? 'https://api.airtable.com',
