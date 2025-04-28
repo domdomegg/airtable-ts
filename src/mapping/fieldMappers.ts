@@ -81,7 +81,7 @@ const dateTimeMapperPair = {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
       throw new AirtableTsError({
-        message: 'Invalid date/time value recieved from Airtable.',
+        message: 'Invalid date/time value received from Airtable.',
         type: ErrorType.SCHEMA_VALIDATION,
       });
     }
@@ -239,7 +239,7 @@ const numberOrNull: Mapper = {
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
           throw new AirtableTsError({
-            message: 'Invalid date/time value recieved from Airtable.',
+            message: 'Invalid date/time value received from Airtable.',
             type: ErrorType.SCHEMA_VALIDATION,
           });
         }
@@ -254,7 +254,7 @@ const numberOrNull: Mapper = {
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
           throw new AirtableTsError({
-            message: 'Invalid date/time value recieved from Airtable.',
+            message: 'Invalid date/time value received from Airtable.',
             type: ErrorType.SCHEMA_VALIDATION,
           });
         }
@@ -269,7 +269,7 @@ const numberOrNull: Mapper = {
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
           throw new AirtableTsError({
-            message: 'Invalid date/time value recieved from Airtable.',
+            message: 'Invalid date/time value received from Airtable.',
             type: ErrorType.SCHEMA_VALIDATION,
           });
         }
@@ -284,7 +284,7 @@ const numberOrNull: Mapper = {
         const date = new Date(nullableValue);
         if (Number.isNaN(date.getTime())) {
           throw new AirtableTsError({
-            message: 'Invalid date/time value recieved from Airtable.',
+            message: 'Invalid date/time value received from Airtable.',
             type: ErrorType.SCHEMA_VALIDATION,
           });
         }
