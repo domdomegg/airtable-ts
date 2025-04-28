@@ -1,11 +1,30 @@
 import { describe, test, expect } from 'vitest';
 import { AirtableRecord, AirtableTable } from '../types';
 import { visibleForTesting } from './recordMapper';
+import { Table } from './typeUtils';
 
 const {
   mapRecordTypeAirtableToTs,
   mapRecordTypeTsToAirtable,
 } = visibleForTesting;
+
+const mockTableDefinition: Table<{ id: string, a: string; b: number; c: boolean; d: string }> = {
+  name: 'example',
+  baseId: 'app123',
+  tableId: 'tbl456',
+  schema: {
+    a: 'string',
+    b: 'number',
+    c: 'boolean',
+    d: 'string',
+  },
+  mappings: {
+    a: 'fld123',
+    b: 'fld456',
+    c: 'fld789',
+    d: 'fld012',
+  },
+};
 
 const mockAirtableTable = {
   name: 'example',
@@ -38,7 +57,7 @@ describe('mapRecordTypeAirtableToTs', () => {
     } as unknown as AirtableRecord;
 
     // WHEN
-    const result = mapRecordTypeAirtableToTs(tsTypes, airtableRecord);
+    const result = mapRecordTypeAirtableToTs(mockTableDefinition, tsTypes, airtableRecord);
 
     // THEN
     expect(result).toEqual({
@@ -69,7 +88,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
 
     // THEN
     expect(result).toEqual({
@@ -97,7 +116,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
 
     // THEN
     expect(result).toEqual({
@@ -123,7 +142,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
 
     // THEN
     expect(result).toEqual({
@@ -147,7 +166,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
 
     // THEN
     expect(result).toEqual({
@@ -173,7 +192,7 @@ describe('mapRecordTypeTsToAirtable', () => {
 
     // WHEN
     // @ts-expect-error: as this correctly detects tsRecord is not compatible with tsTypes
-    const expr = () => mapRecordTypeTsToAirtable(tsTypes, tsRecord, mockAirtableTable);
+    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
 
     // THEN
     expect(expr).toThrow();
@@ -194,7 +213,7 @@ describe('mapRecordTypeTsToAirtable', () => {
 
     // WHEN
     // @ts-expect-error: as this correctly detects tsRecord is not compatible with tsTypes
-    const expr = () => mapRecordTypeTsToAirtable(tsTypes, tsRecord, mockAirtableTable);
+    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
 
     // THEN
     expect(expr).toThrow();
@@ -215,7 +234,7 @@ describe('mapRecordTypeTsToAirtable', () => {
 
     // WHEN
     // @ts-expect-error: as this correctly detects tsRecord is not compatible with tsTypes
-    const expr = () => mapRecordTypeTsToAirtable(tsTypes, tsRecord, mockAirtableTable);
+    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
 
     // THEN
     expect(expr).toThrow();

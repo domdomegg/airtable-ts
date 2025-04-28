@@ -8,7 +8,7 @@ import {
 } from './types';
 import { getFields } from './getFields';
 import { wrapToCatchAirtableErrors } from './wrapToCatchAirtableErrors';
-import { AirtableTsError } from './AirtableTsError';
+import { AirtableTsError, ErrorType } from './AirtableTsError';
 
 export class AirtableTs {
   public airtable: Airtable;
@@ -26,12 +26,20 @@ export class AirtableTs {
 
   async get<T extends Item>(table: Table<T>, id: string): Promise<T> {
     if (!id) {
-      throw new AirtableTsError(`Tried to get record in ${table.name} with no id`);
+      throw new AirtableTsError({
+        message: `The record ID must be supplied when getting a record. This was thrown when trying to get a '${table.name}' (${table.tableId}) record.`,
+        type: ErrorType.INVALID_PARAMETER,
+        suggestion: 'Provide a valid record ID when calling the get method.',
+      });
     }
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
     const record = await airtableTable.find(id) as AirtableRecord;
     if (!record) {
-      throw new AirtableTsError(`Failed to find record in ${table.name} with key ${id}`);
+      throw new AirtableTsError({
+        message: `No record with ID '${id}' exists in table '${table.name}'.`,
+        type: ErrorType.RESOURCE_NOT_FOUND,
+        suggestion: 'Verify that the record ID is correct and that the record exists in the table.',
+      });
     }
     return mapRecordFromAirtable(table, record);
   }
@@ -62,7 +70,11 @@ export class AirtableTs {
 
   async remove<T extends Item>(table: Table<T>, id: string): Promise<{ id: string }> {
     if (!id) {
-      throw new AirtableTsError(`Tried to remove record in ${table.name} with no id`);
+      throw new AirtableTsError({
+        message: `The record ID must be supplied when removing a record. This was thrown when trying to get a '${table.name}' (${table.tableId}) record.`,
+        type: ErrorType.INVALID_PARAMETER,
+        suggestion: 'Provide a valid record ID when calling the remove method.',
+      });
     }
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
     const record = await airtableTable.destroy(id);

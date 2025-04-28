@@ -1,4 +1,4 @@
-import { AirtableTsError } from '../AirtableTsError';
+import { AirtableTsError, ErrorType, prependError } from '../AirtableTsError';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TsTypeString = NonNullToString<any> | ToTsTypeString<any>;
@@ -213,7 +213,10 @@ const arrayToSingleType = (tsType: TsTypeString): TsTypeString => {
   if (tsType.endsWith('[]')) {
     return tsType.slice(0, -'[]'.length) as TsTypeString;
   }
-  throw new AirtableTsError(`Not an array type: ${tsType}`);
+  throw new AirtableTsError({
+    message: `The type '${tsType}' is not an array type.`,
+    type: ErrorType.SCHEMA_VALIDATION,
+  });
 };
 
 /**
@@ -240,15 +243,19 @@ export const airtableFieldNameTsTypes = <T extends Item>(table: Table<T>): Recor
   return Object.fromEntries(
     schemaEntries.map(([outputFieldName, tsType]) => {
       const mappingToAirtable = table.mappings?.[outputFieldName];
-      if (!mappingToAirtable) {
-        return [[outputFieldName, tsType]];
-      }
+      try {
+        if (!mappingToAirtable) {
+          return [[outputFieldName, tsType]];
+        }
 
-      if (Array.isArray(mappingToAirtable)) {
-        return mappingToAirtable.map((airtableFieldName) => [airtableFieldName, arrayToSingleType(tsType)]);
-      }
+        if (Array.isArray(mappingToAirtable)) {
+          return mappingToAirtable.map((airtableFieldName) => [airtableFieldName, arrayToSingleType(tsType)]);
+        }
 
-      return [[mappingToAirtable, tsType]];
+        return [[mappingToAirtable, tsType]];
+      } catch (error) {
+        throw prependError(error, `Error with field ${JSON.stringify(outputFieldName)} (${mappingToAirtable})`);
+      }
     }).flat(1),
   );
 };

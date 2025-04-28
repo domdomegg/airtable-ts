@@ -1,8 +1,8 @@
 import Airtable from 'airtable';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Item, Table } from './mapping/typeUtils';
 import { AirtableTable, CompleteAirtableTsOptions } from './types';
-import { AirtableTsError } from './AirtableTsError';
+import { AirtableTsError, ErrorType } from './AirtableTsError';
 
 export const getAirtableTable = async <T extends Item>(airtable: Airtable, table: Table<T>, options: CompleteAirtableTsOptions): Promise<AirtableTable> => {
   const airtableTable = airtable.base(table.baseId).table(table.tableId);
@@ -17,7 +17,11 @@ export const getAirtableTable = async <T extends Item>(airtable: Airtable, table
   const baseSchema = await getAirtableBaseSchema(table.baseId, options);
   const tableDefinition = baseSchema.find((t) => t.id === table.tableId);
   if (!tableDefinition) {
-    throw new AirtableTsError(`Failed to find table ${table.tableId} in base ${table.baseId}`);
+    throw new AirtableTsError({
+      message: `Table '${table.name}' (${table.tableId}) does not exist in base ${table.baseId}.`,
+      type: ErrorType.RESOURCE_NOT_FOUND,
+      suggestion: 'Verify that the base ID and table ID are correct.',
+    });
   }
 
   return Object.assign(
@@ -41,9 +45,12 @@ const getAirtableBaseSchema = async (baseId: string, options: CompleteAirtableTs
     return fromCache.data;
   }
 
-  // eslint-disable-next-line no-underscore-dangle
   if (!options.apiKey) {
-    throw new AirtableTsError('Missing API key');
+    throw new AirtableTsError({
+      message: 'API key is required but was not provided.',
+      type: ErrorType.INVALID_PARAMETER,
+      suggestion: 'Provide a valid Airtable API key when initializing AirtableTs.',
+    });
   }
   const res = await axios<{ tables: BaseSchema }>({
     baseURL: options.endpointUrl ?? 'https://api.airtable.com',
@@ -54,6 +61,16 @@ const getAirtableBaseSchema = async (baseId: string, options: CompleteAirtableTs
       Authorization: `Bearer ${options.apiKey}`,
       ...options.customHeaders,
     },
+  }).catch((err) => {
+    const normalizedErrorMessage = err instanceof AxiosError
+      ? `${err.message}. Status: ${err.status}. Data: ${JSON.stringify(err.response?.data)}`
+      : err;
+
+    throw new AirtableTsError({
+      message: `Failed to get base schema: ${normalizedErrorMessage}`,
+      type: ErrorType.API_ERROR,
+      suggestion: 'Ensure the API token is correct, and has `schema.bases:read` permission to the target base.',
+    });
   });
   const baseSchema = res.data.tables;
 

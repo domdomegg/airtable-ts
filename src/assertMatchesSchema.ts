@@ -1,7 +1,7 @@
 import {
   matchesType, TsTypeString, Item, Table,
 } from './mapping/typeUtils';
-import { AirtableTsError } from './AirtableTsError';
+import { AirtableTsError, ErrorType } from './AirtableTsError';
 
 /**
  * In theory, this should never catch stuff because our type mapping logic should
@@ -19,7 +19,10 @@ export function assertMatchesSchema<T extends Item>(
   mode: 'full' | 'partial' = 'partial',
 ): asserts data is T {
   if (typeof data !== 'object' || data === null) {
-    throw new AirtableTsError(`Item for ${table.name} is not an object`);
+    throw new AirtableTsError({
+      message: `Data passed in to airtable-ts should be an object but received ${data === null ? 'null' : typeof data}.`,
+      type: ErrorType.SCHEMA_VALIDATION,
+    });
   }
 
   (Object.entries(table.schema) as ([keyof T & string, TsTypeString])[]).forEach(([fieldName, type]) => {
@@ -30,11 +33,17 @@ export function assertMatchesSchema<T extends Item>(
         return;
       }
 
-      throw new AirtableTsError(`Item for ${table.name} table is missing field '${fieldName}' (expected ${type})`);
+      throw new AirtableTsError({
+        message: `Data passed in to airtable-ts is missing required field '${fieldName}' in table '${table.name}' (expected type: ${type}).`,
+        type: ErrorType.SCHEMA_VALIDATION,
+      });
     }
 
     if (!matchesType(value, type)) {
-      throw new AirtableTsError(`Item for ${table.name} table has invalid value for field '${fieldName}' (actual type ${typeof value}, but expected ${type})`);
+      throw new AirtableTsError({
+        message: `Invalid value passed in to airtable-ts for field '${fieldName}' in table '${table.name}' (received type: ${typeof value}, expected type: ${type}).`,
+        type: ErrorType.SCHEMA_VALIDATION,
+      });
     }
   });
 }
