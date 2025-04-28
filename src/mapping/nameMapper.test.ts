@@ -85,7 +85,7 @@ describe('mapRecordFieldNamesTsToAirtable', () => {
     expect(() => mapRecordFieldNamesTsToAirtable(mockTableWithMappings, {
       ...mockItem,
       otherProps: [123, 456, 789],
-    })).toThrow('Got 3 values for Mock.otherProps, but 2 mappings');
+    })).toThrow('received 3 values but had mappings for 2');
   });
 
   test('example with nullable mapped array type', () => {

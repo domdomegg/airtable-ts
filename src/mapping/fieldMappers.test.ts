@@ -150,7 +150,7 @@ describe('number', () => {
     expect(() => mapperPair.fromAirtable(null)).toThrow('non-null');
     expect(() => mapperPair.fromAirtable(undefined)).toThrow('non-null');
 
-    expect(() => mapperPair.toAirtable(123)).toThrow('readonly');
+    expect(() => mapperPair.toAirtable(123)).toThrow('read-only');
   });
 
   test('dateTime', () => {
@@ -201,7 +201,7 @@ describe('string[]', () => {
     expect(mapperPair.fromAirtable([])).toEqual([]);
     expect(() => mapperPair.fromAirtable([1, 2, 3])).toThrow();
 
-    expect(() => mapperPair.toAirtable(['value1', 'value2'])).toThrow('readonly');
+    expect(() => mapperPair.toAirtable(['value1', 'value2'])).toThrow('read-only');
   });
 
   test('formula', () => {
@@ -216,7 +216,7 @@ describe('string[]', () => {
     expect(mapperPair.fromAirtable([])).toEqual([]);
     expect(() => mapperPair.fromAirtable([1, 2, 3])).toThrow();
 
-    expect(() => mapperPair.toAirtable(['value1', 'value2'])).toThrow('readonly');
+    expect(() => mapperPair.toAirtable(['value1', 'value2'])).toThrow('read-only');
   });
 });
 
