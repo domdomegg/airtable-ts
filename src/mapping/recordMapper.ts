@@ -23,7 +23,7 @@ const getMapper = (tsType: TsTypeString, airtableType: string) => {
   }
 
   if (tsMapper.unknown) {
-    console.warn(`[airtable-ts] Unknown airtable type ${airtableType}. This is not fully supported and exact mapping behaviour may change in a future release.`);
+    console.warn(`[airtable-ts] Unknown airtable type ${airtableType} for tsType ${tsType}. This is not fully supported and exact mapping behaviour may change in a future release.`);
     return tsMapper.unknown;
   }
 
@@ -62,10 +62,10 @@ const mapRecordTypeAirtableToTs = <
     // eslint-disable-next-line no-underscore-dangle
     const fieldDefinition = record._table.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
     if (!fieldDefinition) {
+      // This should not happen normally, as we should only be trying to map fields that are in the table definition
       throw new AirtableTsError({
-        message: `Field '${fieldNameOrId}' does not exist in the Airtable table.`,
-        type: ErrorType.RESOURCE_NOT_FOUND,
-        suggestion: 'Verify that the field exists in your Airtable base and that you are using the correct field name or ID.',
+        message: `Field '${fieldNameOrId}' does not exist in the table definition. This error should not happen in normal operation.`,
+        type: ErrorType.SCHEMA_VALIDATION,
       });
     }
 
@@ -124,7 +124,7 @@ const mapRecordTypeTsToAirtable = <
     if (!matchesType(value, tsType)) {
       // This should be unreachable because of our types
       throw new AirtableTsError({
-        message: `Type mismatch for field '${fieldNameOrId}' in table '${airtableTable.name}'.`,
+        message: `Type mismatch for field '${fieldNameOrId}': expected ${tsType} but got a ${typeof value}.`,
         type: ErrorType.SCHEMA_VALIDATION,
         suggestion: 'Ensure the value matches the expected type in your schema definition.',
       });
@@ -133,8 +133,9 @@ const mapRecordTypeTsToAirtable = <
     // eslint-disable-next-line no-underscore-dangle
     const fieldDefinition = airtableTable.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
     if (!fieldDefinition) {
+      const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
       throw new AirtableTsError({
-        message: `Field '${fieldNameOrId}' does not exist in the Airtable table.`,
+        message: `Field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} does not exist in the Airtable table.`,
         type: ErrorType.RESOURCE_NOT_FOUND,
         suggestion: 'Verify that the field exists in your Airtable base and that you are using the correct field name or ID.',
       });
