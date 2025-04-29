@@ -15,6 +15,11 @@ All of these problems are solved with airtable-ts.
 
 In development, you'll define the expected types for different fields: enabling you to leverage type hints in your code editor. After deployment, if people make breaking changes to your base schema you'll get clear runtime errors that pinpoint the problem (rather than your app silently failing, or worse: doing something dangerous!) We also fix unintuitive API behavior, like not being able to tell whether a checkbox field has been deleted or the values are just unticked.
 
+## Related libraries
+
+- [airtable-ts-codegen](https://github.com/domdomegg/airtable-ts-codegen): Autogenerate TypeScript definitions for your Airtable base, with perfect compatibility with airtable-ts
+- [airtable-ts-formula](https://github.com/domdomegg/airtable-ts-formula): Type-safe, securely-escaped and rename-robust formulae for Airtable (e.g. for `filterByFormula`)
+
 ## Example
 
 Install it with `npm install airtable-ts`. Then, use it like:
@@ -127,7 +132,7 @@ Retrieves all records from a table, with optional filtering parameters.
 - `table`: Table definition object
 - `params` (optional): Parameters for filtering, sorting, and limiting results
   - `filterByFormula`: An Airtable formula to filter records
-    - Tip: use airtable-ts-formula for type-safe, securely-escaped and rename-robust formulae!
+    - Tip: use [airtable-ts-formula](https://github.com/domdomegg/airtable-ts-formula) for type-safe, securely-escaped and rename-robust formulae!
   - `sort`: Array of sort objects (e.g., `[{field: 'firstName', direction: 'asc'}]`)
   - `maxRecords`: Maximum number of records to return
   - `view`: Name of a view to use for record selection
