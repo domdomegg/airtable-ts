@@ -1,37 +1,37 @@
-import { FieldSet } from 'airtable';
-import { AirtableRecord, AirtableTsTable } from '../types';
-import { fieldMappers } from './fieldMappers';
-import { mapRecordFieldNamesAirtableToTs, mapRecordFieldNamesTsToAirtable } from './nameMapper';
+import {type FieldSet} from 'airtable';
+import {type AirtableRecord, type AirtableTsTable} from '../types';
+import {fieldMappers} from './fieldMappers';
+import {mapRecordFieldNamesAirtableToTs, mapRecordFieldNamesTsToAirtable} from './nameMapper';
 import {
-  airtableFieldNameTsTypes, AirtableTypeString, FromTsTypeString, Item, matchesType, Table, TsTypeString,
+	airtableFieldNameTsTypes, type AirtableTypeString, type FromTsTypeString, type Item, matchesType, type Table, type TsTypeString,
 } from './typeUtils';
-import { AirtableTsError, ErrorType, prependError } from '../AirtableTsError';
+import {AirtableTsError, ErrorType, prependError} from '../AirtableTsError';
 
 const getMapper = (tsType: TsTypeString, airtableType: string) => {
-  const tsMapper = fieldMappers[tsType];
+	const tsMapper = fieldMappers[tsType];
 
-  if (!tsMapper) {
-    throw new AirtableTsError({
-      message: `No mapper exists for TypeScript type '${tsType}'.`,
-      type: ErrorType.SCHEMA_VALIDATION,
-      suggestion: 'Check that you are using a supported TypeScript type in your schema definition.',
-    });
-  }
+	if (!tsMapper) {
+		throw new AirtableTsError({
+			message: `No mapper exists for TypeScript type '${tsType}'.`,
+			type: ErrorType.SCHEMA_VALIDATION,
+			suggestion: 'Check that you are using a supported TypeScript type in your schema definition.',
+		});
+	}
 
-  if (tsMapper[airtableType as AirtableTypeString]) {
-    return tsMapper[airtableType as AirtableTypeString]!;
-  }
+	if (tsMapper[airtableType as AirtableTypeString]) {
+		return tsMapper[airtableType as AirtableTypeString]!;
+	}
 
-  if (tsMapper.unknown) {
-    console.warn(`[airtable-ts] Unknown airtable type ${airtableType} for tsType ${tsType}. This is not fully supported and exact mapping behaviour may change in a future release.`);
-    return tsMapper.unknown;
-  }
+	if (tsMapper.unknown) {
+		console.warn(`[airtable-ts] Unknown airtable type ${airtableType} for tsType ${tsType}. This is not fully supported and exact mapping behaviour may change in a future release.`);
+		return tsMapper.unknown;
+	}
 
-  throw new AirtableTsError({
-    message: `Cannot map Airtable type '${airtableType}' to TypeScript type '${tsType}'.`,
-    type: ErrorType.SCHEMA_VALIDATION,
-    suggestion: 'Check that your schema definition uses TypeScript types that are compatible with the Airtable field types.',
-  });
+	throw new AirtableTsError({
+		message: `Cannot map Airtable type '${airtableType}' to TypeScript type '${tsType}'.`,
+		type: ErrorType.SCHEMA_VALIDATION,
+		suggestion: 'Check that your schema definition uses TypeScript types that are compatible with the Airtable field types.',
+	});
 };
 
 /**
@@ -50,38 +50,37 @@ const getMapper = (tsType: TsTypeString, airtableType: string) => {
  * @example { id: 'rec012', a: 'Some text', b: 123, c: false, d: 'rec345' }
  */
 const mapRecordTypeAirtableToTs = <
-  T extends { [fieldNameOrId: string]: TsTypeString },
+	T extends Record<string, TsTypeString>,
 >(
-    table: Table<Item>,
-    tsTypes: T,
-    record: AirtableRecord,
-  ): ({ [F in keyof T]: FromTsTypeString<T[F]> } & { id: string }) => {
-  const item = {} as { [F in keyof T]: FromTsTypeString<T[F]> };
+	table: Table<Item>,
+	tsTypes: T,
+	record: AirtableRecord,
+): ({[F in keyof T]: FromTsTypeString<T[F]>} & {id: string}) => {
+	const item = {} as {[F in keyof T]: FromTsTypeString<T[F]>};
 
-  (Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldNameOrId, tsType]) => {
-    // eslint-disable-next-line no-underscore-dangle
-    const fieldDefinition = record._table.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
-    if (!fieldDefinition) {
-      // This should not happen normally, as we should only be trying to map fields that are in the table definition
-      throw new AirtableTsError({
-        message: `Field '${fieldNameOrId}' does not exist in the table definition. This error should not happen in normal operation.`,
-        type: ErrorType.SCHEMA_VALIDATION,
-      });
-    }
+	(Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldNameOrId, tsType]) => {
+		const fieldDefinition = record._table.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
+		if (!fieldDefinition) {
+			// This should not happen normally, as we should only be trying to map fields that are in the table definition
+			throw new AirtableTsError({
+				message: `Field '${fieldNameOrId}' does not exist in the table definition. This error should not happen in normal operation.`,
+				type: ErrorType.SCHEMA_VALIDATION,
+			});
+		}
 
-    const value = record.fields[fieldDefinition.name];
+		const value = record.fields[fieldDefinition.name];
 
-    try {
-      const { fromAirtable } = getMapper(tsType, fieldDefinition.type);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      item[fieldNameOrId] = fromAirtable(value as any) as FromTsTypeString<T[keyof T]>;
-    } catch (error) {
-      const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
-      throw prependError(error, `Failed to map field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} from Airtable`);
-    }
-  });
+		try {
+			const {fromAirtable} = getMapper(tsType, fieldDefinition.type);
 
-  return Object.assign(item, { id: record.id });
+			item[fieldNameOrId] = fromAirtable(value as any) as FromTsTypeString<T[keyof T]>;
+		} catch (error) {
+			const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
+			throw prependError(error, `Failed to map field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} from Airtable`);
+		}
+	});
+
+	return Object.assign(item, {id: record.id});
 };
 
 /**
@@ -103,87 +102,86 @@ const mapRecordTypeAirtableToTs = <
  * @example { a: 'Some text', b: 123, d: ['rec123'] } // (c is an un-ticked checkbox, d is a multipleRecordLinks)
  */
 const mapRecordTypeTsToAirtable = <
-  T extends { [fieldNameOrId: string]: TsTypeString },
-  R extends { [K in keyof T]?: FromTsTypeString<T[K]> } & { id?: string },
+	T extends Record<string, TsTypeString>,
+	R extends {[K in keyof T]?: FromTsTypeString<T[K]>} & {id?: string},
 >(
-    table: Table<Item>,
-    tsTypes: T,
-    tsRecord: R,
-    airtableTsTable: AirtableTsTable,
-  ): FieldSet => {
-  const item = {} as FieldSet;
+	table: Table<Item>,
+	tsTypes: T,
+	tsRecord: R,
+	airtableTsTable: AirtableTsTable,
+): FieldSet => {
+	const item = {} as FieldSet;
 
-  (Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldNameOrId, tsType]) => {
-    const value = tsRecord[fieldNameOrId];
+	(Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldNameOrId, tsType]) => {
+		const value = tsRecord[fieldNameOrId];
 
-    if (!(fieldNameOrId in tsRecord)) {
-      // If we don't have the field, just skip: this allows us to support partial updates
-      return;
-    }
+		if (!(fieldNameOrId in tsRecord)) {
+			// If we don't have the field, just skip: this allows us to support partial updates
+			return;
+		}
 
-    if (!matchesType(value, tsType)) {
-      // This should be unreachable because of our types
-      throw new AirtableTsError({
-        message: `Type mismatch for field '${fieldNameOrId}': expected ${tsType} but got a ${typeof value}.`,
-        type: ErrorType.SCHEMA_VALIDATION,
-        suggestion: 'Ensure the value matches the expected type in your schema definition.',
-      });
-    }
+		if (!matchesType(value, tsType)) {
+			// This should be unreachable because of our types
+			throw new AirtableTsError({
+				message: `Type mismatch for field '${fieldNameOrId}': expected ${tsType} but got a ${typeof value}.`,
+				type: ErrorType.SCHEMA_VALIDATION,
+				suggestion: 'Ensure the value matches the expected type in your schema definition.',
+			});
+		}
 
-    // eslint-disable-next-line no-underscore-dangle
-    const fieldDefinition = airtableTsTable.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
-    if (!fieldDefinition) {
-      const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
-      throw new AirtableTsError({
-        message: `Field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} does not exist in the Airtable table.`,
-        type: ErrorType.RESOURCE_NOT_FOUND,
-        suggestion: 'Verify that the field exists in your Airtable base and that you are using the correct field name or ID.',
-      });
-    }
+		const fieldDefinition = airtableTsTable.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
+		if (!fieldDefinition) {
+			const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
+			throw new AirtableTsError({
+				message: `Field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} does not exist in the Airtable table.`,
+				type: ErrorType.RESOURCE_NOT_FOUND,
+				suggestion: 'Verify that the field exists in your Airtable base and that you are using the correct field name or ID.',
+			});
+		}
 
-    try {
-      const { toAirtable } = getMapper(tsType, fieldDefinition.type);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      item[fieldNameOrId] = (toAirtable as any)(value);
-    } catch (error) {
-      const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
-      throw prependError(error, `Failed to map field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} to Airtable`);
-    }
-  });
+		try {
+			const {toAirtable} = getMapper(tsType, fieldDefinition.type);
 
-  return Object.assign(item, { id: tsRecord.id });
+			item[fieldNameOrId] = (toAirtable as any)(value);
+		} catch (error) {
+			const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
+			throw prependError(error, `Failed to map field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} to Airtable`);
+		}
+	});
+
+	return Object.assign(item, {id: tsRecord.id});
 };
 
 export const mapRecordFromAirtable = <T extends Item>(
-  table: Table<T>,
-  record: AirtableRecord,
+	table: Table<T>,
+	record: AirtableRecord,
 ) => {
-  try {
-    const tsTypes = airtableFieldNameTsTypes(table);
-    const tsRecord = mapRecordTypeAirtableToTs(table, tsTypes, record);
-    const mappedRecord = mapRecordFieldNamesAirtableToTs(table, tsRecord);
-    return mappedRecord;
-  } catch (error) {
-    throw prependError(error, `Failed to map record from Airtable format for table '${table.name}' (${table.tableId}) and record ${record.id}`);
-  }
+	try {
+		const tsTypes = airtableFieldNameTsTypes(table);
+		const tsRecord = mapRecordTypeAirtableToTs(table, tsTypes, record);
+		const mappedRecord = mapRecordFieldNamesAirtableToTs(table, tsRecord);
+		return mappedRecord;
+	} catch (error) {
+		throw prependError(error, `Failed to map record from Airtable format for table '${table.name}' (${table.tableId}) and record ${record.id}`);
+	}
 };
 
 export const mapRecordToAirtable = <T extends Item>(
-  table: Table<T>,
-  item: Partial<T>,
-  airtableTsTable: AirtableTsTable,
+	table: Table<T>,
+	item: Partial<T>,
+	airtableTsTable: AirtableTsTable,
 ): FieldSet => {
-  try {
-    const mappedItem = mapRecordFieldNamesTsToAirtable(table, item);
-    const tsTypes = airtableFieldNameTsTypes(table);
-    const fieldSet = mapRecordTypeTsToAirtable(table, tsTypes, mappedItem, airtableTsTable);
-    return fieldSet;
-  } catch (error) {
-    throw prependError(error, `Failed to map record to Airtable format for table '${table.name}' (${table.tableId})`);
-  }
+	try {
+		const mappedItem = mapRecordFieldNamesTsToAirtable(table, item);
+		const tsTypes = airtableFieldNameTsTypes(table);
+		const fieldSet = mapRecordTypeTsToAirtable(table, tsTypes, mappedItem, airtableTsTable);
+		return fieldSet;
+	} catch (error) {
+		throw prependError(error, `Failed to map record to Airtable format for table '${table.name}' (${table.tableId})`);
+	}
 };
 
 export const visibleForTesting = {
-  mapRecordTypeAirtableToTs,
-  mapRecordTypeTsToAirtable,
+	mapRecordTypeAirtableToTs,
+	mapRecordTypeTsToAirtable,
 };

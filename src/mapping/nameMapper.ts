@@ -1,7 +1,7 @@
 import {
-  Item, Table, FromTsTypeString, TsTypeString,
+	type Item, type Table, type FromTsTypeString, type TsTypeString,
 } from './typeUtils';
-import { AirtableTsError, ErrorType } from '../AirtableTsError';
+import {AirtableTsError, ErrorType} from '../AirtableTsError';
 
 /**
  * Maps a TS object (matching table.mappings) to another TS object (matching table.schema),
@@ -30,24 +30,23 @@ import { AirtableTsError, ErrorType } from '../AirtableTsError';
  *          }
  */
 export const mapRecordFieldNamesAirtableToTs = <T extends Item>(table: Table<T>, tsRecord: Record<string, FromTsTypeString<TsTypeString>>): T => {
-  const schemaEntries = Object.entries(table.schema) as [keyof Omit<T, 'id'> & string, TsTypeString][];
+	const schemaEntries = Object.entries(table.schema) as [keyof Omit<T, 'id'> & string, TsTypeString][];
 
-  const item = Object.fromEntries(
-    schemaEntries.map(([outputFieldName]) => {
-      const mappingToAirtable = table.mappings?.[outputFieldName];
-      if (!mappingToAirtable) {
-        return [outputFieldName, tsRecord[outputFieldName]];
-      }
+	const item = Object.fromEntries(schemaEntries.map(([outputFieldName]) => {
+		const mappingToAirtable = table.mappings?.[outputFieldName];
+		if (!mappingToAirtable) {
+			return [outputFieldName, tsRecord[outputFieldName]];
+		}
 
-      if (Array.isArray(mappingToAirtable)) {
-        return [outputFieldName, mappingToAirtable.map((airtableFieldName) => tsRecord[airtableFieldName])];
-      }
+		if (Array.isArray(mappingToAirtable)) {
+			return [outputFieldName, mappingToAirtable.map((airtableFieldName) => tsRecord[airtableFieldName])];
+		}
 
-      return [outputFieldName, tsRecord[mappingToAirtable as string]];
-    }),
-  );
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+		return [outputFieldName, tsRecord[mappingToAirtable as keyof typeof tsRecord]];
+	}));
 
-  return Object.assign(item, { id: tsRecord['id'] });
+	return Object.assign(item, {id: tsRecord.id});
 };
 
 /**
@@ -77,55 +76,54 @@ export const mapRecordFieldNamesAirtableToTs = <T extends Item>(table: Table<T>,
  *          }
  */
 export const mapRecordFieldNamesTsToAirtable = <T extends Item>(table: Table<T>, item: Partial<T>): Record<string, FromTsTypeString<TsTypeString>> => {
-  const schemaEntries = Object.entries(table.schema) as [keyof Omit<T, 'id'> & string, TsTypeString][];
+	const schemaEntries = Object.entries(table.schema) as [keyof Omit<T, 'id'> & string, TsTypeString][];
 
-  const tsRecord = Object.fromEntries(
-    schemaEntries.map(([outputFieldName, tsType]) => {
-      const mappingToAirtable = table.mappings?.[outputFieldName];
-      if (!(outputFieldName in item)) {
-        // If we don't have the field, just skip: this allows us to support partial updates
-        return [];
-      }
-      const value = item[outputFieldName];
+	const tsRecord = Object.fromEntries(schemaEntries.map(([outputFieldName, tsType]) => {
+		const mappingToAirtable = table.mappings?.[outputFieldName];
+		if (!(outputFieldName in item)) {
+			// If we don't have the field, just skip: this allows us to support partial updates
+			return [];
+		}
 
-      if (!mappingToAirtable) {
-        return [[outputFieldName, value]];
-      }
+		const value = item[outputFieldName];
 
-      if (Array.isArray(mappingToAirtable)) {
-        if (value === null) {
-          if (tsType.endsWith('| null')) {
-            return mappingToAirtable.map((airtableFieldName) => [airtableFieldName, null]);
-          }
+		if (!mappingToAirtable) {
+			return [[outputFieldName, value]];
+		}
 
-          // This should be unreachable because of our types
-          throw new AirtableTsError({
-            message: `Received null for non-nullable field '${outputFieldName}' (${mappingToAirtable}) with type '${tsType}' in table '${table.name}' (${table.tableId}). This should never happen in normal operation as it should be caught before this point.`,
-            type: ErrorType.SCHEMA_VALIDATION,
-          });
-        }
+		if (Array.isArray(mappingToAirtable)) {
+			if (value === null) {
+				if (tsType.endsWith('| null')) {
+					return mappingToAirtable.map((airtableFieldName) => [airtableFieldName, null]);
+				}
 
-        if (!Array.isArray(value)) {
-          throw new AirtableTsError({
-            message: `Expected an array for field '${outputFieldName}' (${mappingToAirtable}) in table '${table.name}' (${table.tableId}), but received ${typeof value}.`,
-            type: ErrorType.SCHEMA_VALIDATION,
-          });
-        }
+				// This should be unreachable because of our types
+				throw new AirtableTsError({
+					message: `Received null for non-nullable field '${outputFieldName}' (${JSON.stringify(mappingToAirtable)}) with type '${tsType}' in table '${table.name}' (${table.tableId}). This should never happen in normal operation as it should be caught before this point.`,
+					type: ErrorType.SCHEMA_VALIDATION,
+				});
+			}
 
-        if (value.length !== mappingToAirtable.length) {
-          throw new AirtableTsError({
-            message: `Array length mismatch for field '${outputFieldName}' (${JSON.stringify(mappingToAirtable)}) in table '${table.name}' (${table.tableId}): received ${value.length} values but had mappings for ${mappingToAirtable.length}.`,
-            type: ErrorType.SCHEMA_VALIDATION,
-            suggestion: 'Ensure the array length matches the number of mapped fields in your table definition.',
-          });
-        }
+			if (!Array.isArray(value)) {
+				throw new AirtableTsError({
+					message: `Expected an array for field '${outputFieldName}' (${JSON.stringify(mappingToAirtable)}) in table '${table.name}' (${table.tableId}), but received ${typeof value}.`,
+					type: ErrorType.SCHEMA_VALIDATION,
+				});
+			}
 
-        return mappingToAirtable.map((airtableFieldName, index) => [airtableFieldName, value[index]]);
-      }
+			if (value.length !== mappingToAirtable.length) {
+				throw new AirtableTsError({
+					message: `Array length mismatch for field '${outputFieldName}' (${JSON.stringify(mappingToAirtable)}) in table '${table.name}' (${table.tableId}): received ${value.length} values but had mappings for ${mappingToAirtable.length}.`,
+					type: ErrorType.SCHEMA_VALIDATION,
+					suggestion: 'Ensure the array length matches the number of mapped fields in your table definition.',
+				});
+			}
 
-      return [[mappingToAirtable, value]];
-    }).flat(1),
-  );
+			return mappingToAirtable.map((airtableFieldName, index) => [airtableFieldName, value[index]]);
+		}
 
-  return Object.assign(tsRecord, { id: item.id });
+		return [[mappingToAirtable, value]];
+	}).flat(1));
+
+	return Object.assign(tsRecord, {id: item.id});
 };
