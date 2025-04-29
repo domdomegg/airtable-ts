@@ -1,10 +1,10 @@
 import Airtable from 'airtable';
 import axios, { AxiosError } from 'axios';
 import { Item, Table } from './mapping/typeUtils';
-import { AirtableTable, CompleteAirtableTsOptions } from './types';
+import { AirtableTsTable, CompleteAirtableTsOptions } from './types';
 import { AirtableTsError, ErrorType } from './AirtableTsError';
 
-export const getAirtableTable = async <T extends Item>(airtable: Airtable, table: Table<T>, options: CompleteAirtableTsOptions): Promise<AirtableTable> => {
+export const getAirtableTsTable = async <T extends Item>(airtable: Airtable, table: Table<T>, options: CompleteAirtableTsOptions): Promise<AirtableTsTable<T>> => {
   const airtableTable = airtable.base(table.baseId).table(table.tableId);
 
   // We need the schema so we know which type mapper to use.
@@ -26,11 +26,14 @@ export const getAirtableTable = async <T extends Item>(airtable: Airtable, table
 
   return Object.assign(
     airtableTable,
-    { fields: tableDefinition.fields },
+    {
+      fields: tableDefinition.fields,
+      tsDefinition: table,
+    },
   );
 };
 
-type BaseSchema = { id: string, fields: AirtableTable['fields'] }[];
+type BaseSchema = { id: string, fields: AirtableTsTable['fields'] }[];
 
 const baseSchemaCache = new Map</* baseId */ string, { at: number, data: BaseSchema }>();
 

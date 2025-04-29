@@ -1,7 +1,7 @@
 import {
   describe, test, expect,
 } from 'vitest';
-import { AirtableRecord, AirtableTable } from '../types';
+import { AirtableRecord, AirtableTsTable } from '../types';
 import { mapRecordFromAirtable, mapRecordToAirtable, visibleForTesting } from './recordMapper';
 import { Table } from './typeUtils';
 
@@ -28,7 +28,7 @@ const mockTableDefinition: Table<{ id: string, a: string; b: number; c: boolean;
   },
 };
 
-const mockAirtableTable = {
+const mockAirtableTsTable = {
   name: 'example',
   fields: [
     { id: 'fld123', name: 'a', type: 'singleLineText' },
@@ -36,7 +36,7 @@ const mockAirtableTable = {
     { id: 'fld789', name: 'c', type: 'checkbox' },
     { id: 'fld012', name: 'd', type: 'multipleRecordLinks' },
   ],
-} as unknown as AirtableTable;
+} as unknown as AirtableTsTable;
 
 describe('mapRecordFromAirtable', () => {
   test('should include table name, table ID, and record ID in error message when field mapping fails', () => {
@@ -108,7 +108,7 @@ describe('mapRecordToAirtable', () => {
 
     // WHEN
     // @ts-expect-error: We're intentionally passing an invalid item to test error handling
-    const expr = () => mapRecordToAirtable(mockTableDefinition, invalidItem, mockAirtableTable);
+    const expr = () => mapRecordToAirtable(mockTableDefinition, invalidItem, mockAirtableTsTable);
 
     // THEN
     expect(expr).toThrow(/Failed to map record to Airtable format for table 'example' \(tbl456\): Type mismatch for field 'fld456': expected number but got a string/);
@@ -129,16 +129,16 @@ describe('mapRecordToAirtable', () => {
       },
     };
 
-    const emptyAirtableTable = {
+    const emptyAirtableTsTable = {
       name: 'missing-field-example',
       fields: [], // No fields defined
-    } as unknown as AirtableTable;
+    } as unknown as AirtableTsTable;
 
     // WHEN
     const expr = () => mapRecordToAirtable(
       tableWithNonExistentField,
       { nonExistent: 'test' },
-      emptyAirtableTable,
+      emptyAirtableTsTable,
     );
 
     // THEN
@@ -163,7 +163,7 @@ describe('mapRecordTypeAirtableToTs', () => {
         // c is an un-ticked checkbox
         d: ['rec345'],
       },
-      _table: mockAirtableTable,
+      _table: mockAirtableTsTable,
     } as unknown as AirtableRecord;
 
     // WHEN
@@ -198,7 +198,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTsTable);
 
     // THEN
     expect(result).toEqual({
@@ -226,7 +226,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTsTable);
 
     // THEN
     expect(result).toEqual({
@@ -252,7 +252,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTsTable);
 
     // THEN
     expect(result).toEqual({
@@ -276,7 +276,7 @@ describe('mapRecordTypeTsToAirtable', () => {
     };
 
     // WHEN
-    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
+    const result = mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTsTable);
 
     // THEN
     expect(result).toEqual({
@@ -302,7 +302,7 @@ describe('mapRecordTypeTsToAirtable', () => {
 
     // WHEN
     // @ts-expect-error: as this correctly detects tsRecord is not compatible with tsTypes
-    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
+    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTsTable);
 
     // THEN
     expect(expr).toThrow();
@@ -323,7 +323,7 @@ describe('mapRecordTypeTsToAirtable', () => {
 
     // WHEN
     // @ts-expect-error: as this correctly detects tsRecord is not compatible with tsTypes
-    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
+    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTsTable);
 
     // THEN
     expect(expr).toThrow();
@@ -344,7 +344,7 @@ describe('mapRecordTypeTsToAirtable', () => {
 
     // WHEN
     // @ts-expect-error: as this correctly detects tsRecord is not compatible with tsTypes
-    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTable);
+    const expr = () => mapRecordTypeTsToAirtable(mockTableDefinition, tsTypes, tsRecord, mockAirtableTsTable);
 
     // THEN
     expect(expr).toThrow();

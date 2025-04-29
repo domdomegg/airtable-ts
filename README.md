@@ -209,10 +209,10 @@ await db.remove(studentTable, 'rec1234');
 ### table
 
 ```ts
-async table<T extends Item>(table: Table<T>): Promise<AirtableTable>
+async table<T extends Item>(table: Table<T>): Promise<AirtableTsTable<T>>
 ```
 
-Retrieves the AirtableTable object for the given table definition. This is the Airtable.js table, enriched with a `fields` key that includes details of the Airtable schema for this table.
+Retrieves the AirtableTsTable object for the given table definition. This is the Airtable.js table, enriched with a `fields` key that includes details of the Airtable schema for this table.
 
 This is useful for advanced use cases where you need direct access to the Airtable table object.
 
@@ -221,9 +221,9 @@ This is useful for advanced use cases where you need direct access to the Airtab
 
 **Example:**
 ```ts
-const airtableTable = await db.table(studentTable);
+const airtableTsTable = await db.table(studentTable);
 // Now you can use the raw Airtable table object with field information
-console.log(airtableTable.fields); // Access the table's field definitions
+console.log(airtableTsTable.fields); // Access the table's field definitions
 ```
 
 ### airtable

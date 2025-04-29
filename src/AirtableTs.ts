@@ -1,10 +1,10 @@
 import Airtable from 'airtable';
-import { getAirtableTable } from './getAirtableTable';
+import { getAirtableTsTable } from './getAirtableTsTable';
 import { assertMatchesSchema } from './assertMatchesSchema';
 import { mapRecordFromAirtable, mapRecordToAirtable } from './mapping/recordMapper';
 import { Item, Table } from './mapping/typeUtils';
 import {
-  AirtableRecord, AirtableTable, AirtableTsOptions, CompleteAirtableTsOptions, ScanParams,
+  AirtableRecord, AirtableTsTable, AirtableTsOptions, CompleteAirtableTsOptions, ScanParams,
 } from './types';
 import { getFields } from './getFields';
 import { wrapToCatchAirtableErrors } from './wrapToCatchAirtableErrors';
@@ -32,8 +32,8 @@ export class AirtableTs {
         suggestion: 'Provide a valid record ID when calling the get method.',
       });
     }
-    const airtableTable = await getAirtableTable(this.airtable, table, this.options);
-    const record = await airtableTable.find(id) as AirtableRecord;
+    const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
+    const record = await airtableTsTable.find(id) as AirtableRecord;
     if (!record) {
       throw new AirtableTsError({
         message: `No record with ID '${id}' exists in table '${table.name}'.`,
@@ -45,8 +45,8 @@ export class AirtableTs {
   }
 
   async scan<T extends Item>(table: Table<T>, params?: ScanParams): Promise<T[]> {
-    const airtableTable = await getAirtableTable(this.airtable, table, this.options);
-    const records = await airtableTable.select({
+    const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
+    const records = await airtableTsTable.select({
       fields: getFields(table),
       ...params,
     }).all() as AirtableRecord[];
@@ -55,16 +55,16 @@ export class AirtableTs {
 
   async insert<T extends Item>(table: Table<T>, data: Partial<Omit<T, 'id'>>): Promise<T> {
     assertMatchesSchema(table, { ...data, id: 'placeholder' });
-    const airtableTable = await getAirtableTable(this.airtable, table, this.options);
-    const record = await airtableTable.create(mapRecordToAirtable(table, data as Partial<T>, airtableTable)) as AirtableRecord;
+    const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
+    const record = await airtableTsTable.create(mapRecordToAirtable(table, data as Partial<T>, airtableTsTable)) as AirtableRecord;
     return mapRecordFromAirtable(table, record);
   }
 
   async update<T extends Item>(table: Table<T>, data: Partial<T> & { id: string }): Promise<T> {
     assertMatchesSchema(table, { ...data });
     const { id, ...withoutId } = data;
-    const airtableTable = await getAirtableTable(this.airtable, table, this.options);
-    const record = await airtableTable.update(data.id, mapRecordToAirtable(table, withoutId as Partial<T>, airtableTable)) as AirtableRecord;
+    const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
+    const record = await airtableTsTable.update(data.id, mapRecordToAirtable(table, withoutId as Partial<T>, airtableTsTable)) as AirtableRecord;
     return mapRecordFromAirtable(table, record);
   }
 
@@ -76,13 +76,13 @@ export class AirtableTs {
         suggestion: 'Provide a valid record ID when calling the remove method.',
       });
     }
-    const airtableTable = await getAirtableTable(this.airtable, table, this.options);
-    const record = await airtableTable.destroy(id);
+    const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
+    const record = await airtableTsTable.destroy(id);
     return { id: record.id };
   }
 
-  async table<T extends Item>(table: Table<T>): Promise<AirtableTable> {
-    return getAirtableTable(this.airtable, table, this.options);
+  async table<T extends Item>(table: Table<T>): Promise<AirtableTsTable<T>> {
+    return getAirtableTsTable(this.airtable, table, this.options);
   }
 }
 

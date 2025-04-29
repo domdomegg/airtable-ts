@@ -1,5 +1,5 @@
 import { FieldSet } from 'airtable';
-import { AirtableRecord, AirtableTable } from '../types';
+import { AirtableRecord, AirtableTsTable } from '../types';
 import { fieldMappers } from './fieldMappers';
 import { mapRecordFieldNamesAirtableToTs, mapRecordFieldNamesTsToAirtable } from './nameMapper';
 import {
@@ -96,7 +96,7 @@ const mapRecordTypeAirtableToTs = <
  * @param tsRecord TypeScript object to convert.
  * @example { a: 'Some text', b: 123, c: false, d: 'rec123' }
  *
- * @param airtableTable An Airtable table.
+ * @param airtableTsTable An Airtable table.
  * @example { fields: { a: 'singleLineText', b: 'number', c: 'checkbox', d: 'multipleRecordLinks' }, ... }
  *
  * @returns An Airtable FieldSet. Throws if cannot coerce to requested type.
@@ -109,7 +109,7 @@ const mapRecordTypeTsToAirtable = <
     table: Table<Item>,
     tsTypes: T,
     tsRecord: R,
-    airtableTable: AirtableTable,
+    airtableTsTable: AirtableTsTable,
   ): FieldSet => {
   const item = {} as FieldSet;
 
@@ -131,7 +131,7 @@ const mapRecordTypeTsToAirtable = <
     }
 
     // eslint-disable-next-line no-underscore-dangle
-    const fieldDefinition = airtableTable.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
+    const fieldDefinition = airtableTsTable.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
     if (!fieldDefinition) {
       const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
       throw new AirtableTsError({
@@ -171,12 +171,12 @@ export const mapRecordFromAirtable = <T extends Item>(
 export const mapRecordToAirtable = <T extends Item>(
   table: Table<T>,
   item: Partial<T>,
-  airtableTable: AirtableTable,
+  airtableTsTable: AirtableTsTable,
 ): FieldSet => {
   try {
     const mappedItem = mapRecordFieldNamesTsToAirtable(table, item);
     const tsTypes = airtableFieldNameTsTypes(table);
-    const fieldSet = mapRecordTypeTsToAirtable(table, tsTypes, mappedItem, airtableTable);
+    const fieldSet = mapRecordTypeTsToAirtable(table, tsTypes, mappedItem, airtableTsTable);
     return fieldSet;
   } catch (error) {
     throw prependError(error, `Failed to map record to Airtable format for table '${table.name}' (${table.tableId})`);

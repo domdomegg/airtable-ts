@@ -2,13 +2,16 @@ import type {
   FieldSet, Table as AirtableSdkTable, Record as AirtableSdkRecord, AirtableOptions,
 } from 'airtable';
 import { QueryParams } from 'airtable/lib/query_params';
+import { Item, Table } from './mapping/typeUtils';
 
 export type AirtableRecord = Omit<AirtableSdkRecord<FieldSet>, '_table'> & {
-  _table: AirtableTable
+  _table: AirtableTsTable
 };
 
-export type AirtableTable = AirtableSdkTable<FieldSet> & {
+export type AirtableTsTable<T extends Item = Item> = AirtableSdkTable<FieldSet> & {
   fields: { id: string, name: string, type: string }[],
+  tsDefinition: Table<T>,
+  __brand?: T,
 };
 
 interface AirtableTsSpecificOptions {
