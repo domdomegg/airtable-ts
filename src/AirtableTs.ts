@@ -4,7 +4,7 @@ import { assertMatchesSchema } from './assertMatchesSchema';
 import { mapRecordFromAirtable, mapRecordToAirtable } from './mapping/recordMapper';
 import { Item, Table } from './mapping/typeUtils';
 import {
-  AirtableRecord, AirtableTsOptions, CompleteAirtableTsOptions, ScanParams,
+  AirtableRecord, AirtableTable, AirtableTsOptions, CompleteAirtableTsOptions, ScanParams,
 } from './types';
 import { getFields } from './getFields';
 import { wrapToCatchAirtableErrors } from './wrapToCatchAirtableErrors';
@@ -79,6 +79,10 @@ export class AirtableTs {
     const airtableTable = await getAirtableTable(this.airtable, table, this.options);
     const record = await airtableTable.destroy(id);
     return { id: record.id };
+  }
+
+  async getAirtableTable<T extends Item>(table: Table<T>): Promise<AirtableTable> {
+    return getAirtableTable(this.airtable, table, this.options);
   }
 }
 

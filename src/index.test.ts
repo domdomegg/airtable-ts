@@ -169,4 +169,31 @@ interface Project {
   expect(removeResult).toEqual({
     id: newProject.id,
   });
+
+  // WHEN: getting airtable table
+  const airtableTable = await db.getAirtableTable(taskTableWithFieldIds);
+
+  // THEN: we get a valid table with field definitions
+  expect(airtableTable).toBeDefined();
+  expect(airtableTable.fields).toBeDefined();
+  expect(Array.isArray(airtableTable.fields)).toBe(true);
+  expect(airtableTable.fields.length).toBeGreaterThan(0);
+  const fieldIds = Object.values(taskTableWithFieldIds.mappings!);
+  // eslint-disable-next-line no-restricted-syntax
+  for (const fieldId of fieldIds) {
+    const field = airtableTable.fields.find((f) => f.id === fieldId);
+    expect(field).toBeDefined();
+  }
+
+  // WHEN: we use the airtableTable to construct a filterByFormula expression
+  const statusFieldId = taskTableWithFieldIds.mappings?.status;
+  expect(statusFieldId?.startsWith('fld')).toBe(true);
+  const statusFieldName = airtableTable.fields.find((f) => f.id === statusFieldId)?.name;
+  expect(statusFieldId).toBeDefined();
+  const inProgressTasks = await db.scan(taskTableWithFieldIds, {
+    filterByFormula: `{${statusFieldName}} = "In progress"`,
+  });
+
+  // THEN: we get the appropriate records
+  expect(inProgressTasks).toEqual([expectedTasks[0]]);
 });
