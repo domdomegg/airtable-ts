@@ -201,12 +201,27 @@ Deletes a record from a table.
 - `table`: Table definition object
 - `id`: The ID of the record to delete
 
-**Returns:**
-- A promise that resolves to an object containing the ID of the deleted record
-
 **Example:**
 ```ts
 await db.remove(studentTable, 'rec1234');
+```
+
+### getAirtableTable
+
+```ts
+async getAirtableTable<T extends Item>(table: Table<T>): Promise<AirtableTable>
+```
+
+Retrieves the raw AirtableTable object for the given table definition. This is useful for advanced use cases where you need direct access to the Airtable table object.
+
+**Parameters:**
+- `table`: Table definition object
+
+**Example:**
+```ts
+const airtableTable = await db.getAirtableTable(studentTable);
+// Now you can use the raw Airtable table object with field information
+console.log(airtableTable.fields); // Access the table's field definitions
 ```
 
 ### airtable
