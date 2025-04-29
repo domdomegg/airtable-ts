@@ -206,20 +206,22 @@ Deletes a record from a table.
 await db.remove(studentTable, 'rec1234');
 ```
 
-### getAirtableTable
+### table
 
 ```ts
-async getAirtableTable<T extends Item>(table: Table<T>): Promise<AirtableTable>
+async table<T extends Item>(table: Table<T>): Promise<AirtableTable>
 ```
 
-Retrieves the raw AirtableTable object for the given table definition. This is useful for advanced use cases where you need direct access to the Airtable table object.
+Retrieves the AirtableTable object for the given table definition. This is the Airtable.js table, enriched with a `fields` key that includes details of the Airtable schema for this table.
+
+This is useful for advanced use cases where you need direct access to the Airtable table object.
 
 **Parameters:**
 - `table`: Table definition object
 
 **Example:**
 ```ts
-const airtableTable = await db.getAirtableTable(studentTable);
+const airtableTable = await db.table(studentTable);
 // Now you can use the raw Airtable table object with field information
 console.log(airtableTable.fields); // Access the table's field definitions
 ```

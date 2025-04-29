@@ -171,7 +171,7 @@ interface Project {
   });
 
   // WHEN: getting airtable table
-  const airtableTable = await db.getAirtableTable(taskTableWithFieldIds);
+  const airtableTable = await db.table(taskTableWithFieldIds);
 
   // THEN: we get a valid table with field definitions
   expect(airtableTable).toBeDefined();

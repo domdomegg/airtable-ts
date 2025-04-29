@@ -81,7 +81,7 @@ export class AirtableTs {
     return { id: record.id };
   }
 
-  async getAirtableTable<T extends Item>(table: Table<T>): Promise<AirtableTable> {
+  async table<T extends Item>(table: Table<T>): Promise<AirtableTable> {
     return getAirtableTable(this.airtable, table, this.options);
   }
 }
