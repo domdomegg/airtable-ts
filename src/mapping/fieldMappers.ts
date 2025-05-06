@@ -48,6 +48,21 @@ const coerce = <T extends TsTypeString>(airtableType: AirtableTypeString | 'unkn
 		return value[0] as FromTsTypeString<T>;
 	}
 
+	// { specialValue: 'NaN' }
+	if (parsedType.nullable && typeof value === 'object' && value !== null && 'specialValue' in value && value.specialValue === 'NaN') {
+		return null as FromTsTypeString<T>;
+	}
+
+	// { error: '#ERROR!' }
+	if (parsedType.nullable && typeof value === 'object' && value !== null && 'error' in value && value.error === '#ERROR!') {
+		return null as FromTsTypeString<T>;
+	}
+
+	// [{ error: '#ERROR!' }]
+	if (parsedType.nullable && Array.isArray(value) && value.length === 1 && typeof value[0] === 'object' && value[0] !== null && 'error' in value[0] && value[0].error === '#ERROR!') {
+		return null as FromTsTypeString<T>;
+	}
+
 	if (!parsedType.array && Array.isArray(value) && value.length !== 1) {
 		throw new AirtableTsError({
 			message: `Cannot convert array with ${value.length} entries from airtable type '${airtableType} to TypeScript type '${tsType}'.`,
