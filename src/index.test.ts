@@ -196,4 +196,33 @@ type Project = {
 
 	// THEN: we get the appropriate records
 	expect(inProgressTasks).toEqual([expectedTasks[0]]);
+
+	// WHEN: we get a rich text field
+	const richTextTable: Table<{id: string; richText: string}> = {
+		name: 'rich text test',
+		baseId: 'app1cNCe6lBFLFgbM',
+		tableId: 'tblyJMoquaTU3pWRX',
+		mappings: {
+			richText: 'fldi6QGAQVU5KdY6P',
+		},
+		schema: {
+			richText: 'string',
+		},
+	};
+
+	// THEN: we get the expected value
+	const fromRichText = await db.get(richTextTable, 'rec8mpYrT2TDkcqdM');
+	expect(fromRichText.richText).toMatchInlineSnapshot(`
+		"- Bullets
+		- Go here
+		    - Indented
+		"
+	`);
+
+	// WHEN: we set it to the same value
+	const toRichText = await db.update(richTextTable, {id: 'rec9T8fcFdivARxlZ', richText: fromRichText.richText});
+
+	// THEN: we expect it not to change
+	// NB: this wouldn't be the case if we indented the bullet by 2 spaces
+	expect(toRichText.richText).toEqual(fromRichText.richText);
 });
