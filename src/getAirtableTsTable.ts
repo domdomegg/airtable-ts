@@ -1,5 +1,4 @@
 import type Airtable from 'airtable';
-import axios, {AxiosError} from 'axios';
 import {type Item, type Table} from './mapping/typeUtils';
 import {type AirtableTsTable, type CompleteAirtableTsOptions} from './types';
 import {AirtableTsError, ErrorType} from './AirtableTsError';
@@ -56,27 +55,39 @@ const getAirtableBaseSchema = async (baseId: string, options: CompleteAirtableTs
 		});
 	}
 
-	const res = await axios<{tables: BaseSchema}>({
-		baseURL: options.endpointUrl ?? 'https://api.airtable.com',
-		url: `/v0/meta/bases/${baseId}/tables`,
-		...(options.requestTimeout ? {timeout: options.requestTimeout} : {}),
-		headers: {
+	const baseURL = options.endpointUrl ?? 'https://api.airtable.com';
+	const url = `${baseURL}/v0/meta/bases/${baseId}/tables`;
 
+	const controller = new AbortController();
+	const timeoutId = options.requestTimeout
+		? setTimeout(() => {
+			controller.abort();
+		}, options.requestTimeout)
+		: undefined;
+
+	const response = await fetch(url, {
+		signal: controller.signal,
+		headers: {
 			Authorization: `Bearer ${options.apiKey}`,
 			...options.customHeaders,
 		},
-	}).catch((err: unknown) => {
-		const normalizedErrorMessage = err instanceof AxiosError
-			? `${err.message}. Status: ${err.status}. Data: ${JSON.stringify(err.response?.data)}`
-			: String(err);
+	});
 
+	if (timeoutId) {
+		clearTimeout(timeoutId);
+	}
+
+	if (!response.ok) {
+		const errorData = await response.text();
 		throw new AirtableTsError({
-			message: `Failed to get base schema: ${normalizedErrorMessage}`,
+			message: `Failed to get base schema: Status: ${response.status}. Data: ${errorData}`,
 			type: ErrorType.API_ERROR,
 			suggestion: 'Ensure the API token is correct, and has `schema.bases:read` permission to the target base.',
 		});
-	});
-	const baseSchema = res.data.tables;
+	}
+
+	const data = await response.json() as {tables: BaseSchema};
+	const baseSchema = data.tables;
 
 	if (baseSchemaCache.size > 100) {
 		baseSchemaCache.clear();
