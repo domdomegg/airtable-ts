@@ -1,6 +1,6 @@
 {
   "name": "airtable-ts",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "A type-safe Airtable SDK",
   "license": "MIT",
   "author": "Adam Jones (domdomegg)",
@@ -22,8 +22,7 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
-    "airtable": "^0.12.2",
-    "axios": "^1.6.8"
+    "airtable": "^0.12.2"
   },
   "devDependencies": {
     "@tsconfig/node-lts": "^22.0.1",
