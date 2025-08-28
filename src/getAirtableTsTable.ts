@@ -59,7 +59,11 @@ const getAirtableBaseSchema = async (baseId: string, options: CompleteAirtableTs
 	const url = `${baseURL}/v0/meta/bases/${baseId}/tables`;
 
 	const controller = new AbortController();
-	const timeoutId = options.requestTimeout ? setTimeout(() => controller.abort(), options.requestTimeout) : undefined;
+	const timeoutId = options.requestTimeout
+		? setTimeout(() => {
+			controller.abort();
+		}, options.requestTimeout)
+		: undefined;
 
 	const response = await fetch(url, {
 		signal: controller.signal,
@@ -69,7 +73,9 @@ const getAirtableBaseSchema = async (baseId: string, options: CompleteAirtableTs
 		},
 	});
 
-	if (timeoutId) clearTimeout(timeoutId);
+	if (timeoutId) {
+		clearTimeout(timeoutId);
+	}
 
 	if (!response.ok) {
 		const errorData = await response.text();
