@@ -21,6 +21,7 @@ export class AirtableTs {
 			...Airtable.default_config(),
 			...options,
 			baseSchemaCacheDurationMs: options.baseSchemaCacheDurationMs ?? 120_000,
+			readValidation: options.readValidation ?? 'error',
 		};
 	}
 
@@ -43,23 +44,33 @@ export class AirtableTs {
 			});
 		}
 
-		return mapRecordFromAirtable(table, record);
+		return mapRecordFromAirtable(table, record, {
+			readValidation: this.options.readValidation,
+			onWarning: this.options.onWarning,
+		});
 	}
 
 	async scan<T extends Item>(table: Table<T>, params?: ScanParams): Promise<T[]> {
 		const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
 		const records = await airtableTsTable.select({
-			fields: getFields(table),
+			fields: getFields(table, airtableTsTable),
 			...params,
 		}).all() as AirtableRecord[];
-		return records.map((record) => mapRecordFromAirtable(table, record));
+
+		return records.map((record) => mapRecordFromAirtable(table, record, {
+			readValidation: this.options.readValidation,
+			onWarning: this.options.onWarning,
+		}));
 	}
 
 	async insert<T extends Item>(table: Table<T>, data: Partial<Omit<T, 'id'>>): Promise<T> {
 		assertMatchesSchema(table, {...data, id: 'placeholder'});
 		const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
 		const record = await airtableTsTable.create(mapRecordToAirtable(table, data as Partial<T>, airtableTsTable)) as AirtableRecord;
-		return mapRecordFromAirtable(table, record);
+		return mapRecordFromAirtable(table, record, {
+			readValidation: this.options.readValidation,
+			onWarning: this.options.onWarning,
+		});
 	}
 
 	async update<T extends Item>(table: Table<T>, data: Partial<T> & {id: string}): Promise<T> {
@@ -67,7 +78,10 @@ export class AirtableTs {
 		const {id, ...withoutId} = data;
 		const airtableTsTable = await getAirtableTsTable(this.airtable, table, this.options);
 		const record = await airtableTsTable.update(id, mapRecordToAirtable(table, withoutId as Partial<T>, airtableTsTable)) as AirtableRecord;
-		return mapRecordFromAirtable(table, record);
+		return mapRecordFromAirtable(table, record, {
+			readValidation: this.options.readValidation,
+			onWarning: this.options.onWarning,
+		});
 	}
 
 	async remove<T extends Item>(table: Table<T>, id: string): Promise<{id: string}> {

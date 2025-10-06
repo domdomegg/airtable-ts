@@ -1,11 +1,17 @@
 import {type FieldSet} from 'airtable';
-import {type AirtableRecord, type AirtableTsTable} from '../types';
+import {
+	type AirtableRecord, type AirtableTsTable, type CompleteAirtableTsOptions,
+} from '../types';
 import {fieldMappers} from './fieldMappers';
 import {mapRecordFieldNamesAirtableToTs, mapRecordFieldNamesTsToAirtable} from './nameMapper';
 import {
 	airtableFieldNameTsTypes, type AirtableTypeString, type FromTsTypeString, type Item, matchesType, type Table, type TsTypeString,
 } from './typeUtils';
 import {AirtableTsError, ErrorType, prependError} from '../AirtableTsError';
+
+type ValidationContext = Pick<CompleteAirtableTsOptions, 'readValidation' | 'onWarning'> & {
+	warnings: unknown[];
+};
 
 const getMapper = (tsType: TsTypeString, airtableType: string) => {
 	const tsMapper = fieldMappers[tsType];
@@ -55,17 +61,27 @@ const mapRecordTypeAirtableToTs = <
 	table: Table<Item>,
 	tsTypes: T,
 	record: AirtableRecord,
+	validationContext?: ValidationContext,
 ): ({[F in keyof T]: FromTsTypeString<T[F]>} & {id: string}) => {
 	const item = {} as {[F in keyof T]: FromTsTypeString<T[F]>};
 
 	(Object.entries(tsTypes) as [keyof T & string, TsTypeString][]).forEach(([fieldNameOrId, tsType]) => {
 		const fieldDefinition = record._table.fields.find((f) => f.id === fieldNameOrId || f.name === fieldNameOrId);
 		if (!fieldDefinition) {
-			// This should not happen normally, as we should only be trying to map fields that are in the table definition
-			throw new AirtableTsError({
+			// This should not happen normally, as we should only be trying to map fields that are in the table definition.
+			// If it does happen this often indicates that the field has been deleted from Airtable without updating the schema.
+			const validationError = new AirtableTsError({
 				message: `Field '${fieldNameOrId}' does not exist in the table definition. This error should not happen in normal operation.`,
 				type: ErrorType.SCHEMA_VALIDATION,
 			});
+
+			if (validationContext?.readValidation === 'warning') {
+				validationContext.warnings.push(validationError);
+				item[fieldNameOrId] = undefined as unknown as FromTsTypeString<T[keyof T]>;
+				return;
+			}
+
+			throw validationError;
 		}
 
 		const value = record.fields[fieldDefinition.name];
@@ -76,7 +92,15 @@ const mapRecordTypeAirtableToTs = <
 			item[fieldNameOrId] = fromAirtable(value as any) as FromTsTypeString<T[keyof T]>;
 		} catch (error) {
 			const tsName = table.mappings ? Object.entries(table.mappings).find((e) => e[1] === fieldNameOrId)?.[0] : undefined;
-			throw prependError(error, `Failed to map field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} from Airtable`);
+			const validationError = prependError(error, `Failed to map field ${tsName ? `${tsName} (${fieldNameOrId})` : fieldNameOrId} from Airtable`);
+
+			if (validationContext?.readValidation === 'warning') {
+				validationContext.warnings.push(validationError);
+				item[fieldNameOrId] = undefined as unknown as FromTsTypeString<T[keyof T]>;
+				return;
+			}
+
+			throw validationError;
 		}
 	});
 
@@ -155,14 +179,38 @@ const mapRecordTypeTsToAirtable = <
 export const mapRecordFromAirtable = <T extends Item>(
 	table: Table<T>,
 	record: AirtableRecord,
+	options?: Pick<CompleteAirtableTsOptions, 'readValidation' | 'onWarning'>,
 ) => {
+	const qualifyError = (error: unknown) => prependError(error, `Failed to map record from Airtable format for table '${table.name}' (${table.tableId}) and record ${record.id}`);
+
+	const validationContext: ValidationContext = {
+		onWarning: options?.onWarning,
+		readValidation: options?.readValidation ?? 'error',
+		warnings: [],
+	};
+
 	try {
 		const tsTypes = airtableFieldNameTsTypes(table);
-		const tsRecord = mapRecordTypeAirtableToTs(table, tsTypes, record);
+		const tsRecord = mapRecordTypeAirtableToTs(table, tsTypes, record, validationContext);
+
+		// Handle warnings from `mapRecordTypeAirtableToTs`
+		if (validationContext.onWarning) {
+			validationContext.warnings.forEach((err) => {
+				void (async () => {
+					try {
+						await validationContext.onWarning?.(qualifyError(err));
+					} catch (error: unknown) {
+						console.error('[airtable-ts] Error in onWarning callback:', error);
+					}
+				})();
+			});
+		}
+
 		const mappedRecord = mapRecordFieldNamesAirtableToTs(table, tsRecord);
+
 		return mappedRecord;
 	} catch (error) {
-		throw prependError(error, `Failed to map record from Airtable format for table '${table.name}' (${table.tableId}) and record ${record.id}`);
+		throw qualifyError(error);
 	}
 };
 

@@ -1,5 +1,5 @@
 import {
-	describe, test, expect,
+	describe, test, expect, vi,
 } from 'vitest';
 import {type AirtableRecord, type AirtableTsTable} from '../types';
 import {mapRecordFromAirtable, mapRecordToAirtable, visibleForTesting} from './recordMapper';
@@ -93,6 +93,188 @@ describe('mapRecordFromAirtable', () => {
 
 		// THEN
 		expect(expr).toThrow(/Failed to map record from Airtable format for table 'example' \(tbl456\) and record rec123: Failed to map field someNumber \(fld123\) from Airtable: Cannot convert value from airtable type 'unknown' to 'number \| null', as the Airtable API provided a 'string'/);
+	});
+
+	describe('`readValidation` set to \'warning\'', () => {
+		const exampleTableDeletedFieldPresent: Table<{
+			id: string;
+			field1: string;
+			field2: string;
+			deletedField: string | null;
+		}> = {
+			name: 'example',
+			baseId: 'appExample123',
+			tableId: 'tblExample456',
+			schema: {
+				field1: 'string',
+				field2: 'string',
+				deletedField: 'string | null',
+			},
+			mappings: {
+				field1: 'fldAbc123',
+				field2: 'fldDef456',
+				deletedField: 'fldDeleted789', // This field was deleted from Airtable
+			},
+		};
+
+		const mockRecordDeletedFieldMissing = {
+			id: 'recExample001',
+			fields: {
+				field1: 'value1',
+				field2: 'value2',
+				// deletedField is not present
+			},
+			_table: {
+				fields: [
+					{id: 'fldAbc123', name: 'field1', type: 'singleLineText'},
+					{id: 'fldDef456', name: 'field2', type: 'singleLineText'},
+					// No fldDeleted789
+				],
+			},
+		} as unknown as AirtableRecord;
+
+		const exampleTableBooleanFieldPresent: Table<{
+			id: string;
+			textField: string;
+			booleanField: boolean | null; // Schema expects boolean (checkbox)
+		}> = {
+			name: 'example',
+			baseId: 'appExample123',
+			tableId: 'tblExample789',
+			schema: {
+				textField: 'string',
+				booleanField: 'boolean | null',
+			},
+			mappings: {
+				textField: 'fldText123',
+				booleanField: 'fldBool456', // This field's type changed in Airtable
+			},
+		};
+
+		const mockRecordBooleanFieldReturnsNumber = {
+			id: 'recExample002',
+			fields: {
+				textField: 'some text',
+				booleanField: 1, // Type changed to number in Airtable
+			},
+			_table: {
+				fields: [
+					{id: 'fldText123', name: 'textField', type: 'singleLineText'},
+					{id: 'fldBool456', name: 'booleanField', type: 'number'}, // Type changed to number
+				],
+			},
+		} as unknown as AirtableRecord;
+
+		test('should gracefully continue if field is deleted from Airtable but still in schema, and call `onWarning` with the error', () => {
+			// GIVEN
+			// `exampleTableDeletedFieldPresent` and `mockRecordDeletedFieldMissing` defined above
+			const warnings: unknown[] = [];
+			const onWarning = (error: unknown) => {
+				warnings.push(error);
+			};
+
+			// WHEN
+			// Use warning mode with onWarning callback
+			const result = mapRecordFromAirtable(exampleTableDeletedFieldPresent, mockRecordDeletedFieldMissing, {
+				readValidation: 'warning',
+				onWarning,
+			});
+
+			// THEN
+			// Should return partial record with available data
+			expect(result).toEqual({
+				id: 'recExample001',
+				field1: 'value1',
+				field2: 'value2',
+				deletedField: undefined,
+			});
+
+			expect(warnings).toHaveLength(1);
+			expect(warnings[0]).toMatchObject({
+				message: expect.stringContaining('Field \'fldDeleted789\' does not exist in the table definition'),
+			});
+		});
+
+		test('should gracefully continue if field type is different between Airtable and the schema, and call `onWarning` with the error', () => {
+			// GIVEN
+			// `exampleTableBooleanFieldPresent` and `mockRecordBooleanFieldReturnsNumber` defined above
+			const warnings: unknown[] = [];
+			const onWarning = (error: unknown) => {
+				warnings.push(error);
+			};
+
+			// WHEN
+			// Use warning mode with onWarning callback
+			const result = mapRecordFromAirtable(exampleTableBooleanFieldPresent, mockRecordBooleanFieldReturnsNumber, {
+				readValidation: 'warning',
+				onWarning,
+			});
+
+			// THEN
+			expect(result).toEqual({
+				id: 'recExample002',
+				textField: 'some text',
+				booleanField: undefined, // Incompatible field should be undefined
+			});
+
+			// Should have called onWarning with an error about the type mismatch
+			expect(warnings).toHaveLength(1);
+			expect(warnings[0]).toMatchObject({
+				message: expect.stringContaining('Failed to map field booleanField (fldBool456) from Airtable'),
+			});
+		});
+
+		test('should silently proceed on validation errors if there is no `onWarning` callback', () => {
+			// GIVEN
+			// `exampleTableDeletedFieldPresent` and `mockRecordDeletedFieldMissing` defined above
+
+			// WHEN
+			// Use warning mode WITHOUT onWarning callback
+			const result = mapRecordFromAirtable(exampleTableDeletedFieldPresent, mockRecordDeletedFieldMissing, {
+				readValidation: 'warning',
+			});
+
+			// THEN
+			// Should return partial record without throwing
+			expect(result).toEqual({
+				id: 'recExample001',
+				field1: 'value1',
+				field2: 'value2',
+				deletedField: undefined,
+			});
+		});
+
+		test('should silently proceed if there are errors in the `onWarning` callback itself', () => {
+			// GIVEN
+			// `exampleTableDeletedFieldPresent` and `mockRecordDeletedFieldMissing` defined above
+
+			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+			const onWarning = () => {
+				throw new Error('onWarning callback failed!');
+			};
+
+			// WHEN
+			// Use warning mode with a throwing onWarning callback
+			const result = mapRecordFromAirtable(exampleTableDeletedFieldPresent, mockRecordDeletedFieldMissing, {
+				readValidation: 'warning',
+				onWarning,
+			});
+
+			// THEN
+			expect(result).toEqual({
+				id: 'recExample001',
+				field1: 'value1',
+				field2: 'value2',
+				deletedField: undefined,
+			});
+
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				'[airtable-ts] Error in onWarning callback:',
+				expect.objectContaining({message: 'onWarning callback failed!'}),
+			);
+
+			consoleErrorSpy.mockRestore();
+		});
 	});
 });
 
