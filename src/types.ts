@@ -18,10 +18,8 @@ type AirtableTsSpecificOptions = {
 	/** The Airtable base schema is used to determine the appropriate type mapper for the field type (for example converting a number to a string representing a date is different to converting a number to a singleLineText). For performance reasons, airtable-ts caches base schemas so we don't refetch it for every request. Note that we always still do validation against the expected type at runtime so the library is always type-safe. @default 120_000 */
 	baseSchemaCacheDurationMs?: number;
 	/**
-	 * How to handle validation failures when reading from Airtable. 'error' throws (default). 'warning' sets failing fields to undefined
-	 * and optionally calls `onWarning`.
-	 *
-	 * NOTE: Setting this to 'warning' breaks type safety, as fields may be undefined even though their type doesn't allow this.
+	 * How to handle validation failures when reading from Airtable. 'error' throws (default). 'warning' sets failing fields to
+	 * type-appropriate default values and optionally calls `onWarning`.
 	 */
 	readValidation?: 'error' | 'warning';
 	/** Callback for validation failures when `readValidation` is set to 'warning' */

@@ -181,12 +181,12 @@ describe('mapRecordFromAirtable', () => {
 			});
 
 			// THEN
-			// Should return partial record with available data
+			// Should return partial record with available data and default value for deleted field
 			expect(result).toEqual({
 				id: 'recExample001',
 				field1: 'value1',
 				field2: 'value2',
-				deletedField: undefined,
+				deletedField: null, // Nullable type defaults to null
 			});
 
 			expect(warnings).toHaveLength(1);
@@ -196,8 +196,8 @@ describe('mapRecordFromAirtable', () => {
 		});
 
 		test('should gracefully continue if field type is different between Airtable and the schema, and call `onWarning` with the error', () => {
-			// GIVEN
-			// `exampleTableBooleanFieldPresent` and `mockRecordBooleanFieldReturnsNumber` defined above
+		// GIVEN
+		// `exampleTableBooleanFieldPresent` and `mockRecordBooleanFieldReturnsNumber` defined above
 			const warnings: unknown[] = [];
 			const onWarning = (error: unknown) => {
 				warnings.push(error);
@@ -214,7 +214,7 @@ describe('mapRecordFromAirtable', () => {
 			expect(result).toEqual({
 				id: 'recExample002',
 				textField: 'some text',
-				booleanField: undefined, // Incompatible field should be undefined
+				booleanField: null, // Nullable type defaults to null
 			});
 
 			// Should have called onWarning with an error about the type mismatch
@@ -240,7 +240,7 @@ describe('mapRecordFromAirtable', () => {
 				id: 'recExample001',
 				field1: 'value1',
 				field2: 'value2',
-				deletedField: undefined,
+				deletedField: null, // Nullable type defaults to null
 			});
 		});
 
@@ -265,7 +265,7 @@ describe('mapRecordFromAirtable', () => {
 				id: 'recExample001',
 				field1: 'value1',
 				field2: 'value2',
-				deletedField: undefined,
+				deletedField: null, // Nullable type defaults to null
 			});
 
 			expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -274,6 +274,72 @@ describe('mapRecordFromAirtable', () => {
 			);
 
 			consoleErrorSpy.mockRestore();
+		});
+
+		test('should return appropriate default values for different types when validation fails', () => {
+			// GIVEN - Table with multiple field types
+			const multiTypeTable: Table<{
+				id: string;
+				stringField: string;
+				nullableStringField: string | null;
+				numberField: number;
+				nullableNumberField: number | null;
+				booleanField: boolean;
+				nullableBooleanField: boolean | null;
+				arrayField: string[];
+				nullableArrayField: string[] | null;
+			}> = {
+				name: 'multiType',
+				baseId: 'appMulti123',
+				tableId: 'tblMulti456',
+				schema: {
+					stringField: 'string',
+					nullableStringField: 'string | null',
+					numberField: 'number',
+					nullableNumberField: 'number | null',
+					booleanField: 'boolean',
+					nullableBooleanField: 'boolean | null',
+					arrayField: 'string[]',
+					nullableArrayField: 'string[] | null',
+				},
+				mappings: {
+					stringField: 'fldStr1',
+					nullableStringField: 'fldStr2',
+					numberField: 'fldNum1',
+					nullableNumberField: 'fldNum2',
+					booleanField: 'fldBool1',
+					nullableBooleanField: 'fldBool2',
+					arrayField: 'fldArr1',
+					nullableArrayField: 'fldArr2',
+				},
+			};
+
+			// Record with all fields deleted from Airtable (simulating validation failures)
+			const mockRecordWithNoFields = {
+				id: 'recMulti001',
+				fields: {},
+				_table: {
+					fields: [],
+				},
+			} as unknown as AirtableRecord;
+
+			// WHEN
+			const result = mapRecordFromAirtable(multiTypeTable, mockRecordWithNoFields, {
+				readValidation: 'warning',
+			});
+
+			// THEN Each field should have its type-appropriate default value
+			expect(result).toEqual({
+				id: 'recMulti001',
+				stringField: '',
+				nullableStringField: null,
+				numberField: 0,
+				nullableNumberField: null,
+				booleanField: false,
+				nullableBooleanField: null,
+				arrayField: [],
+				nullableArrayField: null,
+			});
 		});
 	});
 });

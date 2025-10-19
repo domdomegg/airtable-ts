@@ -5,12 +5,47 @@ import {
 import {fieldMappers} from './fieldMappers';
 import {mapRecordFieldNamesAirtableToTs, mapRecordFieldNamesTsToAirtable} from './nameMapper';
 import {
-	airtableFieldNameTsTypes, type AirtableTypeString, type FromTsTypeString, type Item, matchesType, type Table, type TsTypeString,
+	airtableFieldNameTsTypes, type AirtableTypeString, type FromTsTypeString, type Item, matchesType, parseType, type Table, type TsTypeString,
 } from './typeUtils';
 import {AirtableTsError, ErrorType, prependError} from '../AirtableTsError';
 
 type ValidationContext = Pick<CompleteAirtableTsOptions, 'readValidation' | 'onWarning'> & {
 	warnings: unknown[];
+};
+
+/**
+ * Returns an appropriate default value for a TypeScript type when validation fails.
+ * For nullable types, returns null. For non-nullable types, returns type-specific defaults.
+ */
+const getDefaultValueForType = (tsType: TsTypeString): string | number | boolean | string[] | null => {
+	const parsed = parseType(tsType);
+
+	if (parsed.nullable) {
+		return null;
+	}
+
+	if (parsed.array) {
+		return [];
+	}
+
+	if (parsed.single === 'string') {
+		return '';
+	}
+
+	if (parsed.single === 'number') {
+		return 0;
+	}
+
+	if (parsed.single === 'boolean') {
+		return false;
+	}
+
+	// If we reach here, a new type was added without a default value
+	throw new AirtableTsError({
+		message: `No default value defined for TypeScript type '${tsType}'. This indicates that a new type was added to the type system without updating the default value logic.`,
+		type: ErrorType.SCHEMA_VALIDATION,
+		suggestion: 'Update the getDefaultValueForType function in recordMapper.ts to handle this type.',
+	});
 };
 
 const getMapper = (tsType: TsTypeString, airtableType: string) => {
@@ -77,7 +112,7 @@ const mapRecordTypeAirtableToTs = <
 
 			if (validationContext?.readValidation === 'warning') {
 				validationContext.warnings.push(validationError);
-				item[fieldNameOrId] = undefined as unknown as FromTsTypeString<T[keyof T]>;
+				item[fieldNameOrId] = getDefaultValueForType(tsType) as FromTsTypeString<T[keyof T]>;
 				return;
 			}
 
@@ -96,7 +131,7 @@ const mapRecordTypeAirtableToTs = <
 
 			if (validationContext?.readValidation === 'warning') {
 				validationContext.warnings.push(validationError);
-				item[fieldNameOrId] = undefined as unknown as FromTsTypeString<T[keyof T]>;
+				item[fieldNameOrId] = getDefaultValueForType(tsType) as FromTsTypeString<T[keyof T]>;
 				return;
 			}
 
