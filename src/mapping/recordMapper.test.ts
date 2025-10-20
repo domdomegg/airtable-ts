@@ -196,8 +196,8 @@ describe('mapRecordFromAirtable', () => {
 		});
 
 		test('should gracefully continue if field type is different between Airtable and the schema, and call `onWarning` with the error', () => {
-		// GIVEN
-		// `exampleTableBooleanFieldPresent` and `mockRecordBooleanFieldReturnsNumber` defined above
+			// GIVEN
+			// `exampleTableBooleanFieldPresent` and `mockRecordBooleanFieldReturnsNumber` defined above
 			const warnings: unknown[] = [];
 			const onWarning = (error: unknown) => {
 				warnings.push(error);
