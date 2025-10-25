@@ -80,12 +80,46 @@ const coerce = <T extends TsTypeString>(airtableType: AirtableTypeString | 'unkn
 
 const dateTimeMapperPair = {
 	// Number assumed to be unix time in seconds
+	// String: ambiguous strings (no timezone) passed through, others converted to UTC
+	// Per Airtable spec: ambiguous strings like "2020-09-05T07:00:00" are interpreted
+	// in the field's timezone, while non-ambiguous strings with offsets are converted
 	toAirtable(value: string | number | null) {
 		if (value === null) {
 			return null;
 		}
 
-		const date = new Date(typeof value === 'number' ? value * 1000 : value);
+		if (typeof value === 'string') {
+			// Validation: ensure it's parseable as a date
+			const parsedDate = new Date(value);
+			if (Number.isNaN(parsedDate.getTime())) {
+				throw new AirtableTsError({
+					message: 'Invalid date/time string provided.',
+					type: ErrorType.SCHEMA_VALIDATION,
+				});
+			}
+
+			// Check if this is an ISO 8601-like format (YYYY-MM-DD...)
+			// These are the only formats where we distinguish ambiguous vs non-ambiguous
+			const isIso8601Like = /^\d{4}-\d{2}-\d{2}/.test(value.trim());
+
+			if (isIso8601Like) {
+				// For ISO 8601 formats, check if "ambiguous" (no timezone offset)
+				// Ambiguous: "2020-09-05T07:00:00", "2020-09-08"
+				// Non-ambiguous: "2020-09-05T07:00:00.000Z", "2020-09-08T00:00:00-07:00"
+				const hasTimezoneOffset = /[Zz]$|[+-]\d{2}:?\d{2}$/.test(value.trim());
+
+				if (!hasTimezoneOffset) {
+					// Ambiguous ISO 8601 - pass through for field timezone interpretation
+					return value;
+				}
+			}
+
+			// Non-ambiguous or non-ISO 8601 format - convert to UTC ISO 8601
+			return parsedDate.toJSON();
+		}
+
+		// Number: treat as Unix timestamp in seconds
+		const date = new Date(value * 1000);
 		if (Number.isNaN(date.getTime())) {
 			throw new AirtableTsError({
 				message: 'Invalid date/time value provided.',
