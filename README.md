@@ -92,6 +92,10 @@ Creates a new instance of the AirtableTs client.
     - Create one at https://airtable.com/create/tokens
     - Recommended scopes: schema.bases:read, data.records:read, data.records:write
   - `baseSchemaCacheDurationMs`: Duration in milliseconds to cache base schema (default: 120,000ms = 2 minutes)
+  - `readValidation`: How to handle validation failures when reading from Airtable (default: `'error'`)
+    - `'error'`: Throws an error on validation failure
+    - `'warning'`: Sets failing fields to type-appropriate default values and optionally calls `onWarning`. Default values: nullable types return `null`; non-nullable types return `''` (string), `0` (number), `false` (boolean), or `[]` (arrays)
+  - `onWarning`: Callback function called with validation errors when `readValidation` is `'warning'`
   - Other options from Airtable.js are supported, including: `apiVersion`, `customHeaders`, `endpointUrl`, `noRetryIfRateLimited`, `requestTimeout`
 
 **Example:**
