@@ -44,19 +44,29 @@ describe('string', () => {
 			throw new Error(`Expected mapper pair for [string, ${airtableType}]`);
 		}
 
-		const validDateTimeString = '2023-04-09T12:34:56.789Z';
-		const validDateTimeStringAlt1 = 'Sun Apr 09 2023 13:34:56.789 GMT+0100 (British Summer Time)';
-		const validDateTimeStringAlt2 = '2023-04-09T13:34:56.789+0100';
+		const validDateTimeStringUTC = '2023-04-09T12:34:56.789Z';
+		const validDateTimeStringWithOffset = '2023-04-09T13:34:56.789+0100';
+		const verboseJsFormat = 'Sun Apr 09 2023 13:34:56.789 GMT+0100 (British Summer Time)';
+		const timezoneNaiveString = '2025-01-15T18:00:00';
+		const dateOnlyString = '2023-04-09';
 		const invalidDateTimeString = 'invalid date time string';
 
-		expect(mapperPair.fromAirtable(validDateTimeString)).toBe(validDateTimeString);
+		expect(mapperPair.fromAirtable(validDateTimeStringUTC)).toBe(validDateTimeStringUTC);
 		expect(() => mapperPair.fromAirtable(invalidDateTimeString)).toThrow();
 		expect(() => mapperPair.fromAirtable(null)).toThrow();
 		expect(() => mapperPair.fromAirtable(undefined)).toThrow();
 
-		expect(mapperPair.toAirtable(validDateTimeString)).toBe(validDateTimeString);
-		expect(mapperPair.toAirtable(validDateTimeStringAlt1)).toBe(validDateTimeString);
-		expect(mapperPair.toAirtable(validDateTimeStringAlt2)).toBe(validDateTimeString);
+		// Ambiguous strings (no timezone offset) pass through for field timezone interpretation
+		expect(mapperPair.toAirtable(timezoneNaiveString)).toBe(timezoneNaiveString);
+		expect(mapperPair.toAirtable(dateOnlyString)).toBe(dateOnlyString);
+
+		// Non-ambiguous strings (with timezone offset) convert to UTC ISO 8601
+		expect(mapperPair.toAirtable(validDateTimeStringUTC)).toBe(validDateTimeStringUTC);
+		expect(mapperPair.toAirtable(validDateTimeStringWithOffset)).toBe(validDateTimeStringUTC);
+
+		// Other parseable formats convert to UTC ISO 8601
+		expect(mapperPair.toAirtable(verboseJsFormat)).toBe(validDateTimeStringUTC);
+
 		expect(() => mapperPair.toAirtable(invalidDateTimeString)).toThrow();
 	});
 });
