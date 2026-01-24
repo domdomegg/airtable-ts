@@ -1,5 +1,24 @@
 import {AirtableTsError, ErrorType, prependError} from '../AirtableTsError';
 
+/**
+ * Represents an attachment from Airtable with full metadata.
+ * @see https://airtable.com/developers/web/api/field-model#multipleattachment
+ */
+export type Attachment = {
+	id: string;
+	url: string;
+	filename: string;
+	size: number;
+	type: string;
+	width?: number;
+	height?: number;
+	thumbnails?: {
+		small?: {url: string; width: number; height: number};
+		large?: {url: string; width: number; height: number};
+		full?: {url: string; width: number; height: number};
+	};
+};
+
 export type TsTypeString = NonNullToString<any> | ToTsTypeString<any>;
 
 type NonNullToString<T> =
@@ -9,7 +28,8 @@ type NonNullToString<T> =
 				T extends number[] ? 'number[]' :
 					T extends string[] ? 'string[]' :
 						T extends boolean[] ? 'boolean[]' :
-							never;
+							T extends Attachment[] ? 'Attachment[]' :
+								never;
 
 export type ToTsTypeString<T> =
   null extends T ? `${NonNullToString<T>} | null` : NonNullToString<T>;
@@ -27,7 +47,9 @@ export type FromTsTypeString<T> =
 										T extends 'number[] | null' ? number[] | null :
 											T extends 'boolean[]' ? boolean[] :
 												T extends 'boolean[] | null' ? boolean[] | null :
-													never;
+													T extends 'Attachment[]' ? Attachment[] :
+														T extends 'Attachment[] | null' ? Attachment[] | null :
+															never;
 
 export type AirtableTypeString =
 	| 'aiText'
@@ -126,7 +148,7 @@ export type FromAirtableTypeString<T extends AirtableTypeString | 'unknown'> =
 									: never);
 
 type TypeDef = {
-	single: 'string' | 'number' | 'boolean';
+	single: 'string' | 'number' | 'boolean' | 'Attachment';
 	array: boolean;
 	nullable: boolean;
 };
@@ -164,6 +186,24 @@ export const parseType = (t: TsTypeString): TypeDef => {
 };
 
 /**
+ * Checks if an object is a valid Attachment
+ */
+const isAttachment = (value: unknown): value is Attachment => {
+	if (typeof value !== 'object' || value === null) {
+		return false;
+	}
+
+	const obj = value as Record<string, unknown>;
+	return (
+		typeof obj.id === 'string'
+		&& typeof obj.url === 'string'
+		&& typeof obj.filename === 'string'
+		&& typeof obj.size === 'number'
+		&& typeof obj.type === 'string'
+	);
+};
+
+/**
  * Verifies whether the given value is assignable to the given type
  *
  * @param value
@@ -180,6 +220,14 @@ export const matchesType = (value: unknown, tsType: TsTypeString): boolean => {
 
 	if (expectedType.nullable && value === null) {
 		return true;
+	}
+
+	if (expectedType.single === 'Attachment') {
+		if (!expectedType.array) {
+			return isAttachment(value);
+		}
+
+		return Array.isArray(value) && (value as unknown[]).every(isAttachment);
 	}
 
 	if (!expectedType.array && typeof value === expectedType.single) {

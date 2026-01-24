@@ -1,5 +1,5 @@
 import {
-	type AirtableTypeString, type FromAirtableTypeString, type FromTsTypeString, type TsTypeString,
+	type AirtableTypeString, type FromAirtableTypeString, type FromTsTypeString, type TsTypeString, type Attachment,
 	parseType,
 } from './typeUtils';
 import {AirtableTsError, ErrorType} from '../AirtableTsError';
@@ -190,6 +190,72 @@ const multipleAttachmentsMapperPair = {
 	toAirtable: readonly('multipleAttachments'),
 	fromAirtable(obj: object[] | null | undefined) {
 		return obj?.map((v) => ('url' in v && typeof v.url === 'string' ? v.url : null!)).filter(Boolean) ?? null;
+	},
+};
+
+const multipleAttachmentsWithMetadataMapperPair = {
+	toAirtable: readonly('multipleAttachments'),
+	fromAirtable(obj: object[] | null | undefined): Attachment[] | null {
+		if (!obj) {
+			return null;
+		}
+
+		return obj
+			.filter((v): v is Record<string, unknown> =>
+				typeof v === 'object'
+				&& v !== null
+				&& 'url' in v
+				&& typeof (v as Record<string, unknown>).url === 'string')
+			.map((v) => {
+				const attachment: Attachment = {
+					id: typeof v.id === 'string' ? v.id : '',
+					url: v.url as string,
+					filename: typeof v.filename === 'string' ? v.filename : '',
+					size: typeof v.size === 'number' ? v.size : 0,
+					type: typeof v.type === 'string' ? v.type : '',
+				};
+
+				// Optional width/height for images
+				if (typeof v.width === 'number') {
+					attachment.width = v.width;
+				}
+
+				if (typeof v.height === 'number') {
+					attachment.height = v.height;
+				}
+
+				// Optional thumbnails
+				if (typeof v.thumbnails === 'object' && v.thumbnails !== null) {
+					const thumbs = v.thumbnails as Record<string, unknown>;
+					const thumbnails: Attachment['thumbnails'] = {};
+
+					for (const size of ['small', 'large', 'full'] as const) {
+						const thumb = thumbs[size];
+						if (
+							typeof thumb === 'object'
+							&& thumb !== null
+							&& 'url' in thumb
+							&& typeof (thumb as Record<string, unknown>).url === 'string'
+							&& 'width' in thumb
+							&& typeof (thumb as Record<string, unknown>).width === 'number'
+							&& 'height' in thumb
+							&& typeof (thumb as Record<string, unknown>).height === 'number'
+						) {
+							thumbnails[size] = {
+								url: (thumb as Record<string, unknown>).url as string,
+								width: (thumb as Record<string, unknown>).width as number,
+								height: (thumb as Record<string, unknown>).height as number,
+							};
+						}
+					}
+
+					if (Object.keys(thumbnails).length > 0) {
+						attachment.thumbnails = thumbnails;
+					}
+				}
+
+				return attachment;
+			});
 	},
 };
 
@@ -487,5 +553,15 @@ export const fieldMappers: Mapper = {
 				fromAirtable: (value: null) => nullablePair.fromAirtable(value) ?? [],
 			}];
 		})),
+	},
+
+	'Attachment[] | null': {
+		multipleAttachments: multipleAttachmentsWithMetadataMapperPair,
+	},
+	'Attachment[]': {
+		multipleAttachments: {
+			toAirtable: multipleAttachmentsWithMetadataMapperPair.toAirtable,
+			fromAirtable: (value: object[] | null | undefined) => multipleAttachmentsWithMetadataMapperPair.fromAirtable(value) ?? [],
+		},
 	},
 };
