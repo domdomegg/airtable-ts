@@ -232,6 +232,159 @@ describe('string[]', () => {
 	});
 });
 
+describe('Attachment[]', () => {
+	test('multipleAttachments', () => {
+		const mapperPair = fieldMappers['Attachment[]']?.multipleAttachments;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [Attachment[], multipleAttachments]');
+		}
+
+		const fullAttachment = {
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		};
+
+		const attachmentWithThumbnails = {
+			id: 'attYYYYYYYY',
+			url: 'https://v5.airtableusercontent.com/image',
+			filename: 'photo.jpg',
+			size: 123456,
+			type: 'image/jpeg',
+			width: 1920,
+			height: 1080,
+			thumbnails: {
+				small: {url: 'https://example.com/small', width: 36, height: 36},
+				large: {url: 'https://example.com/large', width: 512, height: 512},
+				full: {url: 'https://example.com/full', width: 1920, height: 1080},
+			},
+		};
+
+		// Full metadata is preserved
+		const result = mapperPair.fromAirtable([fullAttachment]);
+		expect(result).toEqual([{
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		}]);
+
+		// Thumbnails and dimensions are preserved
+		const resultWithThumbs = mapperPair.fromAirtable([attachmentWithThumbnails]);
+		expect(resultWithThumbs).toEqual([{
+			id: 'attYYYYYYYY',
+			url: 'https://v5.airtableusercontent.com/image',
+			filename: 'photo.jpg',
+			size: 123456,
+			type: 'image/jpeg',
+			width: 1920,
+			height: 1080,
+			thumbnails: {
+				small: {url: 'https://example.com/small', width: 36, height: 36},
+				large: {url: 'https://example.com/large', width: 512, height: 512},
+				full: {url: 'https://example.com/full', width: 1920, height: 1080},
+			},
+		}]);
+
+		// Multiple attachments
+		expect(mapperPair.fromAirtable([fullAttachment, attachmentWithThumbnails])).toHaveLength(2);
+
+		// Null/undefined return empty array for non-nullable type
+		expect(mapperPair.fromAirtable(null)).toEqual([]);
+		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+
+		// Read-only - cannot write
+		expect(() => mapperPair.toAirtable([fullAttachment as any])).toThrow('read-only');
+	});
+
+	test('multipleAttachments handles partial data gracefully', () => {
+		const mapperPair = fieldMappers['Attachment[]']?.multipleAttachments;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [Attachment[], multipleAttachments]');
+		}
+
+		// Missing optional fields get defaults
+		const minimalAttachment = {
+			url: 'https://example.com/file',
+		};
+
+		const result = mapperPair.fromAirtable([minimalAttachment]);
+		expect(result).toEqual([{
+			id: '',
+			url: 'https://example.com/file',
+			filename: '',
+			size: 0,
+			type: '',
+		}]);
+
+		// Objects without url are filtered out
+		const noUrl = {id: 'att123', filename: 'test.pdf'};
+		expect(mapperPair.fromAirtable([noUrl])).toEqual([]);
+	});
+});
+
+describe('Attachment[] | null', () => {
+	test('multipleAttachments', () => {
+		const mapperPair = fieldMappers['Attachment[] | null']?.multipleAttachments;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [Attachment[] | null, multipleAttachments]');
+		}
+
+		const attachment = {
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		};
+
+		// Full metadata is preserved
+		expect(mapperPair.fromAirtable([attachment])).toEqual([{
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		}]);
+
+		// Null/undefined return null for nullable type
+		expect(mapperPair.fromAirtable(null)).toBe(null);
+		expect(mapperPair.fromAirtable(undefined)).toBe(null);
+
+		// Empty array returns empty array (not null)
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+
+		// Read-only - cannot write
+		expect(() => mapperPair.toAirtable([attachment as any])).toThrow('read-only');
+	});
+});
+
+describe('string[] multipleAttachments (backward compatibility)', () => {
+	test('multipleAttachments still returns URLs only for string[] type', () => {
+		const mapperPair = fieldMappers['string[]']?.multipleAttachments;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [string[], multipleAttachments]');
+		}
+
+		const attachment = {
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		};
+
+		// Only URLs are returned
+		expect(mapperPair.fromAirtable([attachment])).toEqual(['https://v5.airtableusercontent.com/example']);
+		expect(mapperPair.fromAirtable(null)).toEqual([]);
+		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+	});
+});
+
 describe('unknown', () => {
 	test.each([
 		['string', 'example'],
