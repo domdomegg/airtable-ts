@@ -48,6 +48,34 @@ const getDefaultValueForType = (tsType: TsTypeString): string | number | boolean
 	});
 };
 
+/**
+ * Resolves the effective Airtable type for mapper selection.
+ * For lookup/rollup fields that reference date/dateTime fields, returns a special
+ * type so the mapper knows to parse ISO date strings to Unix timestamps.
+ */
+const resolveEffectiveAirtableType = (
+	airtableType: string,
+	tsType: TsTypeString,
+	fieldOptions?: {result?: {type?: string}},
+): string => {
+	// Only apply special handling for number types with lookup/rollup fields
+	if (!['number', 'number | null', 'number[]', 'number[] | null'].includes(tsType)) {
+		return airtableType;
+	}
+
+	if (airtableType !== 'multipleLookupValues' && airtableType !== 'rollup') {
+		return airtableType;
+	}
+
+	const resultType = fieldOptions?.result?.type;
+	if (resultType === 'date' || resultType === 'dateTime') {
+		// Use a special type that tells the mapper to parse date strings
+		return airtableType === 'multipleLookupValues' ? 'dateLookup' : 'dateRollup';
+	}
+
+	return airtableType;
+};
+
 const getMapper = (tsType: TsTypeString, airtableType: string) => {
 	const tsMapper = fieldMappers[tsType];
 
@@ -122,7 +150,8 @@ const mapRecordTypeAirtableToTs = <
 		const value = record.fields[fieldDefinition.name];
 
 		try {
-			const {fromAirtable} = getMapper(tsType, fieldDefinition.type);
+			const effectiveType = resolveEffectiveAirtableType(fieldDefinition.type, tsType, fieldDefinition.options);
+			const {fromAirtable} = getMapper(tsType, effectiveType);
 
 			item[fieldNameOrId] = fromAirtable(value as any) as FromTsTypeString<T[keyof T]>;
 		} catch (error) {

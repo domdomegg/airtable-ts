@@ -62,6 +62,8 @@ export type AirtableTypeString =
 	| 'createdTime'
 	| 'currency'
 	| 'date'
+	| 'dateLookup'
+	| 'dateRollup'
 	| 'dateTime'
 	| 'duration'
 	| 'email'

@@ -296,6 +296,53 @@ describe('number[] | null', () => {
 
 		expect(() => mapperPair.toAirtable([1, 2, 3])).toThrow('read-only');
 	});
+
+	test('dateLookup - parses ISO date strings to Unix timestamps', () => {
+		const mapperPair = fieldMappers['number[] | null']?.dateLookup;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[] | null, dateLookup]');
+		}
+
+		// ISO datetime strings with explicit timezone are parsed to Unix timestamps
+		const aug14Utc = Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000);
+		const aug15Utc = Math.floor(new Date('2025-08-15T00:00:00.000Z').getTime() / 1000);
+		expect(mapperPair.fromAirtable(['2025-08-14T00:00:00.000Z'])).toEqual([aug14Utc]);
+		expect(mapperPair.fromAirtable(['2025-08-14T00:00:00.000Z', '2025-08-15T00:00:00.000Z'])).toEqual([aug14Utc, aug15Utc]);
+
+		// ISO datetime strings also work
+		expect(mapperPair.fromAirtable(['2023-04-09T12:34:56.000Z'])).toEqual([1681043696]);
+
+		// Null/undefined return null
+		expect(mapperPair.fromAirtable(null)).toBe(null);
+		expect(mapperPair.fromAirtable(undefined)).toBe(null);
+
+		// Empty array returns empty array
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+
+		// Numbers pass through (edge case)
+		expect(mapperPair.fromAirtable([1723593600])).toEqual([1723593600]);
+
+		// Invalid date strings throw
+		expect(() => mapperPair.fromAirtable(['not-a-date'])).toThrow();
+
+		// Read-only
+		expect(() => mapperPair.toAirtable([1723593600])).toThrow('read-only');
+	});
+
+	test('dateRollup - parses ISO date strings to Unix timestamps', () => {
+		const mapperPair = fieldMappers['number[] | null']?.dateRollup;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[] | null, dateRollup]');
+		}
+
+		// Same behavior as dateLookup
+		const aug14Utc = Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000);
+		expect(mapperPair.fromAirtable(['2025-08-14T00:00:00.000Z'])).toEqual([aug14Utc]);
+		expect(mapperPair.fromAirtable(null)).toBe(null);
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+
+		expect(() => mapperPair.toAirtable([1723593600])).toThrow('read-only');
+	});
 });
 
 describe('Attachment[]', () => {

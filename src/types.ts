@@ -8,8 +8,16 @@ export type AirtableRecord = Omit<AirtableSdkRecord<FieldSet>, '_table'> & {
 	_table: AirtableTsTable;
 };
 
+/** Field options for lookup/rollup fields that contain result type information */
+export type FieldResultOptions = {
+	result?: {
+		type?: string;
+		options?: FieldResultOptions;
+	};
+};
+
 export type AirtableTsTable<T extends Item = Item> = AirtableSdkTable<FieldSet> & {
-	fields: {id: string; name: string; type: string}[];
+	fields: {id: string; name: string; type: string; options?: FieldResultOptions}[];
 	tsDefinition: Table<T>;
 	__brand?: T;
 };

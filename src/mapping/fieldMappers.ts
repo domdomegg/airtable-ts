@@ -492,6 +492,63 @@ const stringArrayOrNull: Mapper = {
 	},
 };
 
+/**
+ * Parse an array of date/datetime strings (from lookup fields) to Unix timestamps.
+ * Airtable returns ISO date strings like "2025-08-14" for date lookups,
+ * but users expect number[] (Unix timestamps) for consistency with date fields.
+ */
+const parseDateArrayToUnix = (value: unknown): number[] | null => {
+	if (value === null || value === undefined) {
+		return null;
+	}
+
+	if (!Array.isArray(value)) {
+		throw new AirtableTsError({
+			message: 'Expected an array for date lookup field.',
+			type: ErrorType.SCHEMA_VALIDATION,
+		});
+	}
+
+	if (value.length === 0) {
+		return [];
+	}
+
+	return value.map((item, index) => {
+		// Already a number (shouldn't happen, but handle gracefully)
+		if (typeof item === 'number') {
+			return item;
+		}
+
+		// Parse date string to Unix timestamp
+		if (typeof item === 'string') {
+			const date = new Date(item);
+			if (Number.isNaN(date.getTime())) {
+				throw new AirtableTsError({
+					message: `Invalid date value at index ${index}: '${item}'.`,
+					type: ErrorType.SCHEMA_VALIDATION,
+				});
+			}
+
+			return Math.floor(date.getTime() / 1000);
+		}
+
+		throw new AirtableTsError({
+			message: `Unexpected value type at index ${index}: expected date string, got ${typeof item}.`,
+			type: ErrorType.SCHEMA_VALIDATION,
+		});
+	});
+};
+
+const dateLookupMapperPair = {
+	toAirtable: readonly('multipleLookupValues'),
+	fromAirtable: parseDateArrayToUnix,
+};
+
+const dateRollupMapperPair = {
+	toAirtable: readonly('rollup'),
+	fromAirtable: parseDateArrayToUnix,
+};
+
 const numberArrayOrNull: Mapper = {
 	'number[] | null': {
 		multipleLookupValues: {
@@ -502,6 +559,8 @@ const numberArrayOrNull: Mapper = {
 			toAirtable: readonly('rollup'),
 			fromAirtable: coerce('rollup', 'number[] | null'),
 		},
+		dateLookup: dateLookupMapperPair,
+		dateRollup: dateRollupMapperPair,
 		unknown: {
 			toAirtable: (value) => value,
 			fromAirtable: coerce('unknown', 'number[] | null'),
