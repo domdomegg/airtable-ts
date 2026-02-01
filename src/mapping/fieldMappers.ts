@@ -187,14 +187,26 @@ const multipleCollaboratorsMapperPair = {
 };
 
 const multipleAttachmentsMapperPair = {
-	toAirtable: readonly('multipleAttachments'),
+	toAirtable(value: string[] | null) {
+		if (value === null || value === undefined) {
+			return null;
+		}
+
+		return value.map((url) => ({url}));
+	},
 	fromAirtable(obj: object[] | null | undefined) {
 		return obj?.map((v) => ('url' in v && typeof v.url === 'string' ? v.url : null!)).filter(Boolean) ?? null;
 	},
 };
 
 const multipleAttachmentsWithMetadataMapperPair = {
-	toAirtable: readonly('multipleAttachments'),
+	toAirtable(value: Attachment[] | null) {
+		if (value === null || value === undefined) {
+			return null;
+		}
+
+		return value.map((att) => ({url: att.url, filename: att.filename}));
+	},
 	fromAirtable(obj: object[] | null | undefined): Attachment[] | null {
 		if (!obj) {
 			return null;
@@ -296,7 +308,13 @@ const stringOrNull: Mapper = {
 			fromAirtable: collaboratorMapperPair.fromAirtable,
 		},
 		multipleAttachments: {
-			toAirtable: readonly('multipleAttachments'),
+			toAirtable(value) {
+				if (value === null || value === undefined) {
+					return null;
+				}
+
+				return [{url: value}];
+			},
 			fromAirtable: (value) => coerce('multipleAttachments', 'string | null')(multipleAttachmentsMapperPair.fromAirtable(value)),
 		},
 		multipleSelects: {

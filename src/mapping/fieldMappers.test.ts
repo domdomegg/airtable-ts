@@ -297,8 +297,11 @@ describe('Attachment[]', () => {
 		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
 		expect(mapperPair.fromAirtable([])).toEqual([]);
 
-		// Read-only - cannot write
-		expect(() => mapperPair.toAirtable([fullAttachment as any])).toThrow('read-only');
+		// Write support - converts Attachment[] to {url, filename}[]
+		expect(mapperPair.toAirtable([fullAttachment as any])).toEqual([
+			{url: 'https://v5.airtableusercontent.com/example', filename: 'document.pdf'},
+		]);
+		expect(mapperPair.toAirtable(null)).toBe(null);
 	});
 
 	test('multipleAttachments handles partial data gracefully', () => {
@@ -358,8 +361,11 @@ describe('Attachment[] | null', () => {
 		// Empty array returns empty array (not null)
 		expect(mapperPair.fromAirtable([])).toEqual([]);
 
-		// Read-only - cannot write
-		expect(() => mapperPair.toAirtable([attachment as any])).toThrow('read-only');
+		// Write support - converts Attachment[] to {url, filename}[]
+		expect(mapperPair.toAirtable([attachment as any])).toEqual([
+			{url: 'https://v5.airtableusercontent.com/example', filename: 'document.pdf'},
+		]);
+		expect(mapperPair.toAirtable(null)).toBe(null);
 	});
 });
 
