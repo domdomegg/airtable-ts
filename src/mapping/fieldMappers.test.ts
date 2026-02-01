@@ -467,6 +467,70 @@ describe('Attachment[] | null', () => {
 		// Read-only - cannot write
 		expect(() => mapperPair.toAirtable([attachment as any])).toThrow('read-only');
 	});
+
+	test('multipleLookupValues (attachment lookup fields)', () => {
+		const mapperPair = fieldMappers['Attachment[] | null']?.multipleLookupValues;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [Attachment[] | null, multipleLookupValues]');
+		}
+
+		const attachment = {
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		};
+
+		// Lookup of attachment fields returns the same flattened structure
+		expect(mapperPair.fromAirtable([attachment])).toEqual([{
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		}]);
+
+		// Null/undefined return null for nullable type
+		expect(mapperPair.fromAirtable(null)).toBe(null);
+		expect(mapperPair.fromAirtable(undefined)).toBe(null);
+
+		// Lookup fields are read-only
+		expect(() => mapperPair.toAirtable([attachment as any])).toThrow();
+	});
+});
+
+describe('Attachment[] multipleLookupValues', () => {
+	test('multipleLookupValues (attachment lookup fields)', () => {
+		const mapperPair = fieldMappers['Attachment[]']?.multipleLookupValues;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [Attachment[], multipleLookupValues]');
+		}
+
+		const attachment = {
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		};
+
+		// Lookup of attachment fields returns the same flattened structure
+		expect(mapperPair.fromAirtable([attachment])).toEqual([{
+			id: 'attXXXXXXXX',
+			url: 'https://v5.airtableusercontent.com/example',
+			filename: 'document.pdf',
+			size: 245678,
+			type: 'application/pdf',
+		}]);
+
+		// Null/undefined return empty array for non-nullable type
+		expect(mapperPair.fromAirtable(null)).toEqual([]);
+		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+
+		// Lookup fields are read-only
+		expect(() => mapperPair.toAirtable([attachment as any])).toThrow();
+	});
 });
 
 describe('string[] multipleAttachments (backward compatibility)', () => {
