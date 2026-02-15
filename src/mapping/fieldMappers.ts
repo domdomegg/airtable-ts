@@ -492,6 +492,23 @@ const stringArrayOrNull: Mapper = {
 	},
 };
 
+const numberArrayOrNull: Mapper = {
+	'number[] | null': {
+		multipleLookupValues: {
+			toAirtable: readonly('multipleLookupValues'),
+			fromAirtable: coerce('multipleLookupValues', 'number[] | null'),
+		},
+		rollup: {
+			toAirtable: readonly('rollup'),
+			fromAirtable: coerce('rollup', 'number[] | null'),
+		},
+		unknown: {
+			toAirtable: (value) => value,
+			fromAirtable: coerce('unknown', 'number[] | null'),
+		},
+	},
+};
+
 export const fieldMappers: Mapper = {
 	...stringOrNull,
 	string: {
@@ -548,6 +565,16 @@ export const fieldMappers: Mapper = {
 	...stringArrayOrNull,
 	'string[]': {
 		...Object.fromEntries(Object.entries(stringArrayOrNull['string[] | null']!).map(([airtableType, nullablePair]) => {
+			return [airtableType, {
+				toAirtable: nullablePair.toAirtable,
+				fromAirtable: (value: null) => nullablePair.fromAirtable(value) ?? [],
+			}];
+		})),
+	},
+
+	...numberArrayOrNull,
+	'number[]': {
+		...Object.fromEntries(Object.entries(numberArrayOrNull['number[] | null']!).map(([airtableType, nullablePair]) => {
 			return [airtableType, {
 				toAirtable: nullablePair.toAirtable,
 				fromAirtable: (value: null) => nullablePair.fromAirtable(value) ?? [],

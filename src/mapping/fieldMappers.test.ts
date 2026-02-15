@@ -232,6 +232,72 @@ describe('string[]', () => {
 	});
 });
 
+describe('number[]', () => {
+	test('multipleLookupValues', () => {
+		const mapperPair = fieldMappers['number[]']?.multipleLookupValues;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[], multipleLookupValues]');
+		}
+
+		expect(mapperPair.fromAirtable([1, 2, 3])).toEqual([1, 2, 3]);
+		expect(mapperPair.fromAirtable(null)).toEqual([]);
+		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+		expect(() => mapperPair.fromAirtable(['value1', 'value2'])).toThrow();
+
+		expect(() => mapperPair.toAirtable([1, 2, 3])).toThrow('read-only');
+	});
+
+	test('rollup', () => {
+		const mapperPair = fieldMappers['number[]']?.rollup;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[], rollup]');
+		}
+
+		expect(mapperPair.fromAirtable([1, 2, 3])).toEqual([1, 2, 3]);
+		expect(mapperPair.fromAirtable(null)).toEqual([]);
+		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+		expect(() => mapperPair.fromAirtable(['value1', 'value2'])).toThrow();
+
+		expect(() => mapperPair.toAirtable([1, 2, 3])).toThrow('read-only');
+	});
+});
+
+describe('number[] | null', () => {
+	test('multipleLookupValues', () => {
+		const mapperPair = fieldMappers['number[] | null']?.multipleLookupValues;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[] | null, multipleLookupValues]');
+		}
+
+		expect(mapperPair.fromAirtable([1, 2, 3])).toEqual([1, 2, 3]);
+		expect(mapperPair.fromAirtable(null)).toBe(null);
+		expect(mapperPair.fromAirtable(undefined)).toBe(null);
+		// Empty arrays are valid number[] and pass the type check before nullable coercion
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+		expect(() => mapperPair.fromAirtable(['value1', 'value2'])).toThrow();
+
+		expect(() => mapperPair.toAirtable([1, 2, 3])).toThrow('read-only');
+	});
+
+	test('rollup', () => {
+		const mapperPair = fieldMappers['number[] | null']?.rollup;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[] | null, rollup]');
+		}
+
+		expect(mapperPair.fromAirtable([1, 2, 3])).toEqual([1, 2, 3]);
+		expect(mapperPair.fromAirtable(null)).toBe(null);
+		expect(mapperPair.fromAirtable(undefined)).toBe(null);
+		// Empty arrays are valid number[] and pass the type check before nullable coercion
+		expect(mapperPair.fromAirtable([])).toEqual([]);
+		expect(() => mapperPair.fromAirtable(['value1', 'value2'])).toThrow();
+
+		expect(() => mapperPair.toAirtable([1, 2, 3])).toThrow('read-only');
+	});
+});
+
 describe('Attachment[]', () => {
 	test('multipleAttachments', () => {
 		const mapperPair = fieldMappers['Attachment[]']?.multipleAttachments;
@@ -403,6 +469,13 @@ describe('unknown', () => {
 		['string[] | null', ['rec123']],
 		['string[] | null', ['rec123', 'rec456']],
 		['string[] | null', null],
+		['number[]', []],
+		['number[]', [123]],
+		['number[]', [123, 456]],
+		['number[] | null', []],
+		['number[] | null', [123]],
+		['number[] | null', [123, 456]],
+		['number[] | null', null],
 	] as const)('unknown airtable type for %s maps same type successfully', (tsType, value) => {
 		const mapperPair = fieldMappers[tsType]?.unknown;
 		if (!mapperPair) {
