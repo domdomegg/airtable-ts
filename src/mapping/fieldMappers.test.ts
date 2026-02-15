@@ -94,6 +94,16 @@ describe('string | null', () => {
 		expect(mapperPair.toAirtable(null)).toBe(null);
 	});
 
+	test('multipleAttachments', () => {
+		const mapperPair = fieldMappers['string | null']?.multipleAttachments;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [string | null, multipleAttachments]');
+		}
+
+		expect(mapperPair.toAirtable('https://example.com/file.pdf')).toEqual([{url: 'https://example.com/file.pdf'}]);
+		expect(mapperPair.toAirtable(null)).toBe(null);
+	});
+
 	test('multipleRecordLinks', () => {
 		const mapperPair = fieldMappers['string | null']?.multipleRecordLinks;
 		if (!mapperPair) {
@@ -403,8 +413,11 @@ describe('Attachment[]', () => {
 		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
 		expect(mapperPair.fromAirtable([])).toEqual([]);
 
-		// Read-only - cannot write
-		expect(() => mapperPair.toAirtable([fullAttachment as any])).toThrow('read-only');
+		// Write support - converts Attachment[] to {url, filename}[]
+		expect(mapperPair.toAirtable([fullAttachment as any])).toEqual([
+			{url: 'https://v5.airtableusercontent.com/example', filename: 'document.pdf'},
+		]);
+		expect(mapperPair.toAirtable(null)).toBe(null);
 	});
 
 	test('multipleAttachments handles partial data gracefully', () => {
@@ -464,8 +477,11 @@ describe('Attachment[] | null', () => {
 		// Empty array returns empty array (not null)
 		expect(mapperPair.fromAirtable([])).toEqual([]);
 
-		// Read-only - cannot write
-		expect(() => mapperPair.toAirtable([attachment as any])).toThrow('read-only');
+		// Write support - converts Attachment[] to {url, filename}[]
+		expect(mapperPair.toAirtable([attachment as any])).toEqual([
+			{url: 'https://v5.airtableusercontent.com/example', filename: 'document.pdf'},
+		]);
+		expect(mapperPair.toAirtable(null)).toBe(null);
 	});
 });
 
@@ -488,6 +504,13 @@ describe('string[] multipleAttachments (backward compatibility)', () => {
 		expect(mapperPair.fromAirtable([attachment])).toEqual(['https://v5.airtableusercontent.com/example']);
 		expect(mapperPair.fromAirtable(null)).toEqual([]);
 		expect(mapperPair.fromAirtable(undefined)).toEqual([]);
+
+		// Write support - converts string URLs to {url} objects
+		expect(mapperPair.toAirtable(['https://example.com/a.pdf', 'https://example.com/b.pdf'])).toEqual([
+			{url: 'https://example.com/a.pdf'},
+			{url: 'https://example.com/b.pdf'},
+		]);
+		expect(mapperPair.toAirtable([])).toEqual([]);
 	});
 });
 
