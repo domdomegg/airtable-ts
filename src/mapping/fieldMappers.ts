@@ -625,11 +625,21 @@ export const fieldMappers: Mapper = {
 
 	'Attachment[] | null': {
 		multipleAttachments: multipleAttachmentsWithMetadataMapperPair,
+		// Lookup fields that reference attachment fields return the same flattened structure
+		multipleLookupValues: {
+			toAirtable: readonly('multipleLookupValues'),
+			fromAirtable: (value: unknown[] | null | undefined) => multipleAttachmentsWithMetadataMapperPair.fromAirtable(value as object[] | null | undefined),
+		},
 	},
 	'Attachment[]': {
 		multipleAttachments: {
 			toAirtable: multipleAttachmentsWithMetadataMapperPair.toAirtable,
 			fromAirtable: (value: object[] | null | undefined) => multipleAttachmentsWithMetadataMapperPair.fromAirtable(value) ?? [],
+		},
+		// Lookup fields that reference attachment fields return the same flattened structure
+		multipleLookupValues: {
+			toAirtable: readonly('multipleLookupValues'),
+			fromAirtable: (value: unknown[] | null | undefined) => multipleAttachmentsWithMetadataMapperPair.fromAirtable(value as object[] | null | undefined) ?? [],
 		},
 	},
 };
