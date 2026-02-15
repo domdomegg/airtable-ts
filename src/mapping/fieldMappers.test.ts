@@ -262,6 +262,26 @@ describe('number[]', () => {
 
 		expect(() => mapperPair.toAirtable([1, 2, 3])).toThrow('read-only');
 	});
+
+	test('multipleLookupValues coerces ISO date strings to Unix timestamps', () => {
+		const mapperPair = fieldMappers['number[]']?.multipleLookupValues;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[], multipleLookupValues]');
+		}
+
+		expect(mapperPair.fromAirtable(['2025-08-14T00:00:00.000Z'])).toEqual([Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000)]);
+		expect(mapperPair.fromAirtable(['2025-08-14'])).toEqual([Math.floor(new Date('2025-08-14').getTime() / 1000)]);
+		expect(mapperPair.fromAirtable(['2023-04-09T12:34:56.000Z', '2025-08-14T00:00:00.000Z'])).toEqual([Math.floor(new Date('2023-04-09T12:34:56.000Z').getTime() / 1000), Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000)]);
+	});
+
+	test('rollup coerces ISO date strings to Unix timestamps', () => {
+		const mapperPair = fieldMappers['number[]']?.rollup;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[], rollup]');
+		}
+
+		expect(mapperPair.fromAirtable(['2025-08-14T00:00:00.000Z'])).toEqual([Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000)]);
+	});
 });
 
 describe('number[] | null', () => {
@@ -295,6 +315,26 @@ describe('number[] | null', () => {
 		expect(() => mapperPair.fromAirtable(['value1', 'value2'])).toThrow();
 
 		expect(() => mapperPair.toAirtable([1, 2, 3])).toThrow('read-only');
+	});
+
+	test('multipleLookupValues coerces ISO date strings to Unix timestamps', () => {
+		const mapperPair = fieldMappers['number[] | null']?.multipleLookupValues;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[] | null, multipleLookupValues]');
+		}
+
+		expect(mapperPair.fromAirtable(['2025-08-14T00:00:00.000Z'])).toEqual([Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000)]);
+		expect(mapperPair.fromAirtable(['2025-08-14'])).toEqual([Math.floor(new Date('2025-08-14').getTime() / 1000)]);
+		expect(mapperPair.fromAirtable(['2023-04-09T12:34:56.000Z', '2025-08-14T00:00:00.000Z'])).toEqual([Math.floor(new Date('2023-04-09T12:34:56.000Z').getTime() / 1000), Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000)]);
+	});
+
+	test('rollup coerces ISO date strings to Unix timestamps', () => {
+		const mapperPair = fieldMappers['number[] | null']?.rollup;
+		if (!mapperPair) {
+			throw new Error('Expected mapper pair for [number[] | null, rollup]');
+		}
+
+		expect(mapperPair.fromAirtable(['2025-08-14T00:00:00.000Z'])).toEqual([Math.floor(new Date('2025-08-14T00:00:00.000Z').getTime() / 1000)]);
 	});
 });
 

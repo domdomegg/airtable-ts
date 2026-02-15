@@ -40,6 +40,29 @@ const coerce = <T extends TsTypeString>(airtableType: AirtableTypeString | 'unkn
 		return null as FromTsTypeString<T>;
 	}
 
+	// ISO date strings (e.g. from date lookup/rollup fields) coerced to Unix timestamps
+	if (parsedType.single === 'number' && !parsedType.array && typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+		const date = new Date(value);
+		if (!Number.isNaN(date.getTime())) {
+			return Math.floor(date.getTime() / 1000) as FromTsTypeString<T>;
+		}
+	}
+
+	if (parsedType.single === 'number' && parsedType.array && Array.isArray(value) && value.every((v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v))) {
+		const timestamps = value.map((v) => {
+			const date = new Date(v as string);
+			if (Number.isNaN(date.getTime())) {
+				throw new AirtableTsError({
+					message: `Invalid date value '${v as string}' in array from airtable type '${airtableType}'.`,
+					type: ErrorType.SCHEMA_VALIDATION,
+				});
+			}
+
+			return Math.floor(date.getTime() / 1000);
+		});
+		return timestamps as FromTsTypeString<T>;
+	}
+
 	if (parsedType.array && typeof value === parsedType.single) {
 		return [value] as FromTsTypeString<T>;
 	}
