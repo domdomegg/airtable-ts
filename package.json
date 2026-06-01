@@ -32,6 +32,6 @@
     "eslint-config-domdomegg": "^2.0.8",
     "tsconfig-domdomegg": "^1.0.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.2"
+    "vitest": "^4.1.0"
   }
 }
